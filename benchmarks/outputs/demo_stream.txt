@@ -2,7 +2,7 @@
   CLOSURE SDK — STREAM CLASSIFICATION & MULTI-FAULT LOCALIZATION
 ============================================================================================
 ============================================================================================
-  SECTION 1: Multi-Fault Localization  (localize_all)
+  SECTION 1: Multi-Fault Localization  (gilgamesh)
 ============================================================================================
 
   Given two complete sequences, find EVERY incident — not just the first.
@@ -35,13 +35,13 @@
 
 
 ============================================================================================
-  SECTION 2: Stream Classification  (StreamClassifier)
+  SECTION 2: Stream Classification  (Enkidu)
 ============================================================================================
 
   The oracle problem: when a record arrives on one side but not the other,
   is it missing or just late? At arrival time, you cannot know.
 
-  The StreamClassifier solves this with a bounded grace period:
+  The Enkidu solves this with a bounded grace period:
     1. Record arrives on one side → held as unresolved
     2. Same record arrives on other side within grace → silent resolve
     3. Grace expires → promoted to "missing"
@@ -111,10 +111,10 @@
 ============================================================================================
   The canon provides two tools for finding what broke:
 
-    localize_all       Static. Two complete sequences → every incident.
+    gilgamesh       Static. Two complete sequences → every incident.
                        Compose, search, classify, remove, repeat.
 
-    StreamClassifier   Stream. Records arrive in real-time.
+    Enkidu   Stream. Records arrive in real-time.
                        Match, wait, promote, reclassify.
                        The oracle problem → bounded binary decision.
 

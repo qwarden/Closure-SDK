@@ -2,14 +2,14 @@
 
 Two composition modes, same classification:
 
-    Static mode (localize_all):
+    Static mode (gilgamesh):
         Both streams are complete. Compose both on S³, binary-search for
         the first divergence, classify it, remove the pair, recompose,
         repeat. Because we have the full picture, we know instantly
         whether a record is missing or reordered.
         O(k · n · log n) where k is the number of incidents.
 
-    Stream mode (StreamClassifier):
+    Stream mode (Enkidu):
         Records arrive one at a time. We cannot see the future, so every
         unmatched record is initially a missing record — that is literally
         what it is at the present moment. The question is whether it STAYS
@@ -54,10 +54,12 @@ Also here:
 
 from __future__ import annotations
 
-from collections import deque
+from collections import Counter, deque
 from dataclasses import dataclass
 
-from .lenses import Oracle
+import closure_rs
+import numpy as np
+
 from .lenses import GROUP_SPEC
 
 
@@ -71,7 +73,7 @@ class RetainedBlock:
 
 class RetentionWindow:
     """A bounded rolling buffer of raw records. When a Monitor detects
-    drift, this is where the raw bytes are stored so localize_all can
+    drift, this is where the raw bytes are stored so gilgamesh can
     work on them. Plumbing — no algebra happens here.
     """
 
@@ -115,7 +117,7 @@ class IncidentReport:
     """One incident found by the detective.
 
     incident_type   — "missing" (W broke, record absent from one side)
-                      or "content_mismatch" (RGB broke, record moved).
+                      or "reorder" (RGB broke, record moved).
     source_index    — position in stream A (None if absent from A).
     target_index    — position in stream B (None if absent from B).
     record          — the actual bytes.
@@ -129,7 +131,7 @@ class IncidentReport:
     checks: int
 
 
-class StreamClassifier:
+class Enkidu:
     """The online matcher. Classifies stream records in real time.
 
     Every record that arrives on one side gets checked against the other
@@ -186,7 +188,7 @@ class StreamClassifier:
                 # Was already promoted to missing — reclassify to reorder.
                 # The record wasn't absent, it was late.
                 reclassified = IncidentReport(
-                    incident_type="content_mismatch",
+                    incident_type="reorder",
                     source_index=src_pos,
                     target_index=tgt_pos,
                     record=payload,
@@ -269,71 +271,139 @@ class StreamClassifier:
 
     def __repr__(self) -> str:
         return (
-            f"StreamClassifier(cycle={self._cycle}, "
+            f"Enkidu(cycle={self._cycle}, "
             f"unresolved={self.unresolved_source + self.unresolved_target}, "
             f"reclassified={self._reclassified})"
         )
 
 
-def localize_all(
+def gilgamesh(
     source_records: list[bytes],
     target_records: list[bytes],
     *,
     max_faults: int = 1000,
 ) -> list[IncidentReport]:
-    """The recursive technique. Takes two complete lists of raw records
-    and finds every point where they disagree. Compose both on S³,
-    binary-search for first divergence, classify (missing or reorder),
-    remove the pair, recompose, repeat until the streams match.
-    Returns one IncidentReport per incident found.
+    """Compose both sequences on S³. If they diverge, classify every
+    fault. Three steps:
+
+        1. Compose & search — embed both sequences on S³, build both
+           paths, binary-search for the first divergence. O(n) embed,
+           O(log n) search. If σ ≈ 0 → streams agree, return empty.
+
+        2. Narrow — two pointers skip the matching prefix and suffix.
+           Only the dirty region in the middle needs classification.
+
+        3. Classify — walk the dirty region. For each record, counter
+           lookup tells us if it exists on the other side (O(1)).
+           Missing → report. Present at different position → reorder.
+           Paired records are removed from the counter, preserving
+           the composition (same element on both sides → inverse
+           cancels via the Hopf fiber).
+
+    Build once. Search once. Walk the dirty region only.
     """
-    src = [(i, rec) for i, rec in enumerate(source_records)]
-    tgt = [(i, rec) for i, rec in enumerate(target_records)]
+    n_src = len(source_records)
+    n_tgt = len(target_records)
+
+    if n_src == 0 and n_tgt == 0:
+        return []
+
+    # --- step 1: compose both on S³, check coherence ---
+    group = closure_rs.sphere()
+
+    def _embed_all(records: list[bytes]) -> np.ndarray:
+        if not records:
+            return np.empty((0, 4), dtype=np.float64)
+        elems = [
+            np.asarray(
+                closure_rs.closure_element_from_raw_bytes(GROUP_SPEC, [r]),
+                dtype=np.float64,
+            )
+            for r in records
+        ]
+        return np.ascontiguousarray(np.vstack(elems), dtype=np.float64)
+
+    src_elements = _embed_all(source_records)
+    tgt_elements = _embed_all(target_records)
+
+    src_path = closure_rs.GeometricPath.from_elements(group, src_elements)
+    tgt_path = closure_rs.GeometricPath.from_elements(group, tgt_elements)
+    first_fault, checks = src_path.localize_against(tgt_path)
+
+    if first_fault is None:
+        return []  # σ ≈ 0, streams agree
+
+    # --- step 2: narrow — skip matching prefix and suffix ---
+    # Front pointer: advance while records match
+    front = 0
+    shared = min(n_src, n_tgt)
+    while front < shared and source_records[front] == target_records[front]:
+        front += 1
+
+    # Back pointer: advance inward while records match
+    back_src = n_src - 1
+    back_tgt = n_tgt - 1
+    while (back_src > front and back_tgt > front
+           and source_records[back_src] == target_records[back_tgt]):
+        back_src -= 1
+        back_tgt -= 1
+
+    # Dirty region: source[front..back_src], target[front..back_tgt]
+    dirty_src = source_records[front:back_src + 1]
+    dirty_tgt = target_records[front:back_tgt + 1]
+
+    # --- step 3: classify the dirty region ---
+    # Position map: payload → list of positions in dirty target
+    tgt_positions: dict[bytes, list[int]] = {}
+    for i, rec in enumerate(dirty_tgt):
+        tgt_positions.setdefault(rec, []).append(i)
+
+    # Multiset count of what's available on the target side
+    tgt_counts = Counter(dirty_tgt)
 
     faults: list[IncidentReport] = []
+    paired_tgt: set[int] = set()  # dirty-region indices already matched
 
-    for _ in range(max_faults):
-        src_bytes = [b for _, b in src]
-        tgt_bytes = [b for _, b in tgt]
+    for i, rec in enumerate(dirty_src):
+        src_orig = front + i  # original index in source_records
 
-        if not src_bytes and not tgt_bytes:
-            break
-        if not src_bytes:
-            for orig_idx, rec in tgt:
-                faults.append(IncidentReport("missing", None, orig_idx, rec, 0))
-            break
-        if not tgt_bytes:
-            for orig_idx, rec in src:
-                faults.append(IncidentReport("missing", orig_idx, None, rec, 0))
-            break
-
-        src_trace = Oracle.from_records(src_bytes)
-        tgt_trace = Oracle.from_records(tgt_bytes)
-
-        result = src_trace.localize_against(tgt_trace)
-
-        if result.index is None:
-            break
-
-        idx = result.index
-        src_rec = src_bytes[idx] if idx < len(src_bytes) else None
-        tgt_rec = tgt_bytes[idx] if idx < len(tgt_bytes) else None
-
-        tgt_set = set(tgt_bytes)
-        src_set = set(src_bytes)
-
-        if src_rec is not None and src_rec not in tgt_set:
-            faults.append(IncidentReport("missing", src[idx][0], None, src_rec, result.checks))
-            src.pop(idx)
-        elif tgt_rec is not None and tgt_rec not in src_set:
-            faults.append(IncidentReport("missing", None, tgt[idx][0], tgt_rec, result.checks))
-            tgt.pop(idx)
-        else:
-            tgt_pos = next(i for i, (_, b) in enumerate(tgt) if b == src_rec)
+        if tgt_counts.get(rec, 0) == 0:
+            # not in target → missing
             faults.append(IncidentReport(
-                "content_mismatch", src[idx][0], tgt[tgt_pos][0], src_rec, result.checks,
+                "missing", src_orig, None, rec,
+                checks if not faults else 0,
             ))
-            src.pop(idx)
-            tgt.pop(tgt_pos)
+        else:
+            # find first unpaired target position for this payload
+            tgt_local = None
+            for candidate in tgt_positions.get(rec, []):
+                if candidate not in paired_tgt:
+                    tgt_local = candidate
+                    break
 
-    return faults
+            if tgt_local is None:
+                # all copies already paired → extra copy, missing
+                faults.append(IncidentReport(
+                    "missing", src_orig, None, rec, 0,
+                ))
+            else:
+                tgt_orig = front + tgt_local  # original index in target
+                paired_tgt.add(tgt_local)
+                tgt_counts[rec] -= 1
+
+                if src_orig != tgt_orig:
+                    # same record, different position → reorder
+                    faults.append(IncidentReport(
+                        "reorder", src_orig, tgt_orig, rec, 0,
+                    ))
+                # else: same position in dirty region → coherent, skip
+
+    # Any unpaired target records are missing from source
+    for j in range(len(dirty_tgt)):
+        if j not in paired_tgt:
+            tgt_orig = front + j
+            faults.append(IncidentReport(
+                "missing", None, tgt_orig, dirty_tgt[j], 0,
+            ))
+
+    return faults[:max_faults]

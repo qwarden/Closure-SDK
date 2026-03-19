@@ -60,29 +60,75 @@ satellite telemetry, event streams — anything ordered.
 
 ## Original contributions
 
-**The recursive multi-fault localizer** (`localize_all`).
-Given two complete sequences, finds every incident — not just the
-first one. Composes both on S³, binary-searches for each divergence,
-classifies it, removes the pair, recomposes, repeats. Arbitrary
-numbers of faults, single pass, O(k · n · log n).
+**Resolving ambiguity in space** (`Gilgamesh`).
 
-**The stream classifier** (`StreamClassifier`).
-Solves the oracle problem for streaming data. When a record arrives
-on one side with no match on the other, it is missing — right now,
-that is what it is. But we cannot see the future. The grace period
-makes the unknown explicit: hold the record one cycle, ask one
-binary question — "is this a payload invertibility (doesn't exist)
-or a position invertibility (arrived late)?" — and decide. After any
-misalignment the next step is the same case, the same question, the
-same tool. The solution is recursive. Errors chain, but the tool
-chains with them.
 
-**The incident duality**.
-There are exactly two incident types: missing (existence broke) and
-reorder (position broke). These are algebraic inverses of each other
-— one breaks the scalar axis (W), the other breaks the vector axis
-(RGB). Same algebraic object, one axis symmetric, one antisymmetric.
-There is no third type. This falls out of the quaternion structure.
+Given two complete sequences, finds every point where they
+diverged. Both sequences are already written — the question is
+spatial: where, exactly, do they differ, and how many times? Compose
+both on S³, and the geometry already encodes every divergence. Walk
+the disagreement region once, ask one question per record — does the
+other side have it, or doesn't it? — and the Hopf fiber classifies
+the answer. O(n + log n).
+
+A quantitative contribution — efficient solutions for comparing data
+in files exist; the advance is precision and efficiency on a new
+substrate. 
+
+**Resolving ambiguity in time** (`Enkidu`).
+When a record arrives on one side
+with no match on the other, the question is temporal: is it absent,
+or just late? The future is not yet written — no amount of
+computation resolves this. The principle is simple: we can embed
+exactly one semantic meaning into data — it either exists or it
+doesn't. The rolling counter makes the absence explicit: hold the
+record one cycle, and the empty slot where its match should be IS
+the answer. The grace period turns the oracle problem into a bounded
+binary decision. After any misalignment the next step is the same
+case, the same question, the same tool. Errors chain, and the tool
+chains with them. 
+
+A qualitative contribution — no prior solution treats the oracle
+problem as a geometric variable.
+
+Both modes rest on the same geometric fact: the Hopf fiber guarantees
+that missing and reorder are algebraic inverses. They are not labels
+assigned by a classifier — they are the two axes the quaternion
+provides, orthogonal and exhaustive.
+
+**The Zeroth Law of Thermodynamics — The Law of Coherence (axis completeness).**
+
+The universe provides exactly two ways for coherence to break:
+something exists or it doesn't, and something is in the right place
+or it isn't. Existence is a scalar question — present or absent,
+the W axis, symmetric under inversion. Position is a vector question
+— here or displaced, the RGB axes, antisymmetric under inversion.
+These are the two axes quaternion algebra provides, and every
+divergence between two ordered streams lands on one of them.
+
+A quaternion q = w + xi + yj + zk has two parts that behave
+differently under conjugation: the scalar w is symmetric (unchanged),
+the vector (xi + yj + zk) is antisymmetric (sign flips). A divergence
+between two compositions lands on one or the other — never both, never
+neither. invert() flips one axis while preserving the other, which is
+why the two incident types are algebraic inverses.
+
+    Missing record — existence axis (W):
+        stream A: [tx_001, tx_002, tx_003]
+        stream B: [tx_001, tx_003]
+        diff → W anomaly, RGB near zero.
+        axis = "existence". position_b = None.
+
+    Reorder — position axis (RGB):
+        stream A: [tx_001, tx_002, tx_003]
+        stream B: [tx_001, tx_003, tx_002]
+        diff → RGB anomaly, W near zero.
+        axis = "position". displacement = 1.
+
+Theorems 1 and 2 measure how precisely and uniformly the SDK detects
+divergence. Theorem 0 is what they are measuring: the two axes are
+orthogonal, exhaustive, and geometrically stable — which is what
+makes exact sensitivity and uniform detectability possible at all.
 
 **The Hopf-to-color mapping** (`expose`, `expose_incident`).
 The Hopf fibration decomposes S³ into S² × S¹. We map this to a
@@ -114,7 +160,7 @@ produces inversion, and composing with identity gives closure.
 ## Architecture
 
 ```
-THE BALL (S³ — where everything lives)
+THE SPHERE (S³ — where everything lives)
 │
 │  Every record becomes a point on this sphere.
 │  Every composition is a movement on this sphere.
@@ -122,7 +168,7 @@ THE BALL (S³ — where everything lives)
 │  Distance from identity = how much something broke.
 │
 ├── ENTRY
-│   └── embed()                          ops.py:30       bytes → point on the ball
+│   └── embed()                          ops.py:30       bytes → point on the hypersphere
 │
 ├── TOOLS (operate on points)
 │   ├── compose(a, b)                    ops.py:41       multiply two points
@@ -137,22 +183,22 @@ THE BALL (S³ — where everything lives)
 │   └── Witness                          lenses.py:200   reference template, verifies
 │
 ├── ANSWER FORMATS                       state.py
-│   ├── ClosureState                     state.py:24     a point on the ball
+│   ├── ClosureState                     state.py:24     a point on the hypersphere
 │   ├── CompareResult                    state.py:43     drift + coherent flag
 │   └── LocalizationResult              state.py:58     position + steps
 │
 │
 THE CANON (finds what broke — two modes, same classification)
 │
-│  When the ball says "something diverged," the canon finds WHERE
+│  When the sphere says "something diverged," the canon finds WHERE
 │  and classifies WHAT: missing (W broke) or reorder (RGB broke).
 │
 ├── STATIC MODE (both streams complete)
-│   └── localize_all(source, target)     canon.py:276    compose, search, classify, remove, repeat
-│                                                        O(k · n · log n)
+│   └── gilgamesh(source, target)     canon.py:280    compose, narrow, classify
+│                                                        O(n + log n)
 │
 ├── STREAM MODE (records arrive one at a time)
-│   └── StreamClassifier                 canon.py:132    match, wait, promote, reclassify
+│   └── Enkidu                 canon.py:132    match, wait, promote, reclassify
 │       ├── .ingest(payload, pos, side)                  classify on arrival
 │       └── .advance_cycle()                             roll the counter, promote unresolved
 │                                                        one binary question per tick:
@@ -166,7 +212,7 @@ THE CANON (finds what broke — two modes, same classification)
 │
 THE CHAIN (Hopf projection → color channels)
 │
-│  The ball holds full-color quaternions. The chain is the prism
+│  The sphere holds full-color quaternions. The chain is the prism
 │  that splits them into human-readable channels.
 │  W  (scalar)  = coherence axis    (e, self-evident, axiom 2)
 │  RGB (vector) = interaction axes  (π, observed, axiom 1)
@@ -193,17 +239,17 @@ PIPELINE (data flows top to bottom)
     embed()                  ops.py:30 ─────────── ENTRY
         │
         ▼
-    Seer / Oracle / Witness  lenses.py ─────────── LENSES compose on the ball
+    Seer / Oracle / Witness  lenses.py ─────────── LENSES compose on the sphere
         │
         ▼
-    sigma() / compare()      ops.py:61 / :79 ───── TOOLS measure on the ball
+    sigma() / compare()      ops.py:61 / :79 ───── TOOLS measure on the sphere
         │
         ├── coherent? → done
         │
         ▼
-    localize_all()  ─┐
+    gilgamesh()  ─┐
                      ├─ canon.py ───────────────── CANON finds each incident
-    StreamClassifier ┘    static (recursive) or stream (online)
+    Enkidu ┘    static (complete) or stream (online)
         │
         ▼
     expose_incident()        valence.py:110 ─────── CHAIN translates to channels
@@ -219,10 +265,10 @@ FRONT DOOR
 
     __init__.py              19 symbols exported
     closure_sdk/
-      ops.py                 the ball's tools (6)
-      lenses.py              Seer, Oracle, Witness + GROUP_SPEC
+      ops.py                 the sphere's tools (6)
+      lenses.py              Seer, Oracle, Witness
       state.py               answer formats (3)
-      canon.py               localize_all, StreamClassifier, IncidentReport, RetentionWindow
+      canon.py               gilgamesh, Enkidu, IncidentReport, RetentionWindow
       valence.py             expose, expose_incident, Valence, IncidentValence
       hopf.py                the prism (internal, wrapped by valence)
 ```
@@ -290,7 +336,7 @@ The Hopf decomposition maps to a 3+1 hierarchy:
 
 W is inverse to (R, G, B) — scalar vs vector in quaternion algebra.
 
-Like splitting white light through a prism. The ball holds the full
+Like splitting white light through a prism. The sphere holds the full
 color. The chain (Hopf projection) separates it into a brightness
 channel (W — is the light there at all?) and three color channels
 (RGB — what direction is the light pointing?). A missing record
@@ -417,7 +463,7 @@ One stream has the record, the other doesn't. Signature: one position
 is None. Like a receipt that exists in one ledger but is absent from
 the other — the question is about existence.
 
-**Content mismatch (reorder)** — position axis broke (RGB-dominant).
+**Reorder** — position axis broke (RGB-dominant).
 Both streams have the record, but at different positions. Signature:
 both positions present, they differ. Like two copies of the same
 receipt filed in different places — the question is about ordering.
@@ -451,7 +497,7 @@ quaternion composition in the decomposed basis.
 
 ## API Reference
 
-### The ball's tools — ops.py
+### The sphere's tools — ops.py
 
 Six operations on S³. Three from axiom 1 (interaction), three from
 axiom 2 (coherence).
@@ -512,7 +558,7 @@ axiom 2 (coherence).
 
 ### Lenses — lenses.py
 
-Three instruments for observing the composition. Same ball, different
+Three instruments for observing the composition. Same sphere, different
 resolution.
 
     Seer()
@@ -564,14 +610,30 @@ resolution.
 Two composition modes, same classification. Finds where streams
 diverge and classifies each incident as missing or reorder.
 
-    localize_all(source: list[bytes], target: list[bytes]) → list[IncidentReport]
+    gilgamesh(source: list[bytes], target: list[bytes]) → list[IncidentReport]
 
-        Static mode. Both streams are complete. Composes both on S³,
-        binary-searches for the first divergence, classifies it, removes
-        the pair, recomposes, and repeats until the streams agree.
-        O(k · n · log n) where k is the number of incidents.
+        Static mode. Both streams are complete. Three steps:
 
-    StreamClassifier()
+        1. Compose & search — embed both sequences on S³, build both
+           paths as prefix products, binary-search for the first
+           divergence. O(n) embed, O(log n) search. If σ ≈ 0, the
+           streams agree — return empty.
+
+        2. Narrow — two pointers walk inward from both ends, skipping
+           the matching prefix and suffix. Only the dirty region in
+           the middle needs classification.
+
+        3. Classify — walk the dirty region once. For each record,
+           counter lookup tells us if it exists on the other side.
+           Missing → report. Present at different position → reorder.
+           Paired records cancel (same element on both sides, inverse
+           via the Hopf fiber) and are removed from the counter
+           without recomposing.
+
+        Compose once. Search once. Walk the dirty region only.
+        O(n + log n).
+
+    Enkidu()
 
         Stream mode. The online matcher. Records arrive one at a time.
         Each unmatched record starts as potentially missing. The grace
@@ -597,7 +659,7 @@ diverge and classifies each incident as missing or reorder.
 
     IncidentReport (frozen dataclass)
 
-        incident_type: str              "missing" or "content_mismatch"
+        incident_type: str              "missing" or "reorder"
         source_index: int | None        position in stream A
         target_index: int | None        position in stream B
         record: bytes                   the payload
@@ -614,11 +676,11 @@ diverge and classifies each incident as missing or reorder.
 
 ### The chain — valence.py
 
-The prism that splits ball geometry into human-readable color channels.
+The prism that splits sphere geometry into human-readable color channels.
 
     expose(element: NDArray) → Valence
 
-        Takes any point on the ball and decomposes it into 3+1 channels
+        Takes any point on the sphere and decomposes it into 3+1 channels
         via the Hopf fibration. Works at every step of the composition —
         call it after every ingest to watch the channels evolve in real
         time, or on any diff to see what kind of divergence it is.
@@ -653,7 +715,7 @@ The shapes that come back from the tools.
 
     ClosureState
 
-        A point on the ball. What you get from embed(), compose(), or
+        A point on the hypersphere. What you get from embed(), compose(), or
         any lens's .state() method.
 
         group: str                      always "Sphere"
@@ -695,7 +757,7 @@ the adapter includes a signifier (sequence number, UUID) in the
 payload. This is a property of the geometry.
 
 Concretely: in stream mode, the hash-set matching stores one entry
-per payload. In static mode, localize_all uses set-membership for
+per payload. In static mode, gilgamesh uses set-membership for
 classification. Both are correct if the adapter enforces payload
 uniqueness. If it doesn't, identical records pair arbitrarily —
 which is mathematically correct (they are the same element) but
@@ -708,20 +770,6 @@ need to track which specific bill, stamp a serial number on it.
 The composition is non-abelian: same bytes at position 5 and
 position 10 produce different contributions. Position is baked
 into the algebra.
-
----
-
-## Policies
-
-**S³ only.** The SDK composes on S³ and projects down. The Rust
-engine supports other groups; the SDK surfaces only the complete view.
-
-**No policy logic.** The SDK exposes structure. It labels incidents
-as missing or reorder. It never assigns fault, blame, or meaning.
-The application layer decides what to do.
-
-**No backwards compatibility.** Private v0 repo. Dead code gets
-deleted. Renamed symbols get renamed everywhere.
 
 ---
 

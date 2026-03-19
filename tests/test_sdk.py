@@ -154,7 +154,7 @@ def test_expose_incident_returns_incident_valence() -> None:
     src = [b"a", b"b", b"c"]
     tgt = [b"a", b"c"]  # b"b" missing from target
 
-    faults = closure.localize_all(src, tgt)
+    faults = closure.gilgamesh(src, tgt)
     assert len(faults) >= 1
 
     mon = closure.Seer()

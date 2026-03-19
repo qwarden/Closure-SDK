@@ -25,8 +25,8 @@ The chain (translates ball geometry into color channels):
     IncidentValence   — channels + positions + payload + axis
 
 The canon (finds what broke):
-    localize_all      — static: compose, search, classify, remove, repeat
-    StreamClassifier  — stream: match, wait, promote, reclassify
+    gilgamesh         — static: compose, narrow, classify
+    Enkidu            — stream: match, wait, promote, reclassify
     IncidentReport    — one incident: type, positions, payload
 
 Answer formats:
@@ -39,7 +39,7 @@ from .lenses import Seer, Oracle, Witness
 from .state import ClosureState, CompareResult, LocalizationResult
 from .ops import embed, compose, invert, sigma, diff, compare
 from .valence import Valence, IncidentValence, expose, expose_incident
-from .canon import RetentionWindow, IncidentReport, localize_all, StreamClassifier
+from .canon import RetentionWindow, IncidentReport, gilgamesh, Enkidu
 
 __all__ = [
     # Primitives
@@ -59,8 +59,8 @@ __all__ = [
     "CompareResult",
     "LocalizationResult",
     # Canon
-    "localize_all",
-    "StreamClassifier",
+    "gilgamesh",
+    "Enkidu",
     "IncidentReport",
     "RetentionWindow",
     # Valence

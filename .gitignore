@@ -40,7 +40,8 @@
 !tests/conftest.py
 !tests/test_sdk.py
 !tests/test_retention.py
-!tests/test_stream_classifier.py
+!tests/test_enkidu.py
+!tests/test_gilgamesh.py
 !tests/test_theorems.py
 !tests/test_groups.py
 !tests/test_path.py

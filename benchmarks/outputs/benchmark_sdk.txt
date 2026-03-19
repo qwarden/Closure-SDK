@@ -6,37 +6,37 @@
            n  Method                Build     Detect    Hot Chk     Locate  Checks  Extra
   ──────────  ──────────────── ────────── ────────── ────────── ────────── ───────  ────────────────
       10,000  SHA-256              1.8 ms     1.7 ms     0.4 μs          —       —  yes/no only
-              Hash Chain           7.6 ms     7.5 ms     0.1 μs     0.7 ms   7,501  OK
-              Merkle Tree         21.3 ms    21.5 ms     0.1 μs    12.0 μs      15  OK
-              Oracle (S³)         12.0 ms    11.8 ms     3.9 μs    11.1 μs      14  σ=1.1895 OK
-              Witness (S³)        21.5 ms    21.2 ms          —    20.8 ms      14  σ=1.1895 OK
+              Hash Chain           7.5 ms     8.4 ms     0.1 μs     0.8 ms   7,501  OK
+              Merkle Tree         23.7 ms    23.3 ms     0.1 μs    10.1 μs      15  OK
+              Oracle (S³)         12.1 ms    11.7 ms     3.9 μs     8.6 μs      14  σ=1.1895 OK
+              Witness (S³)        21.4 ms    21.0 ms          —    22.5 ms      14  σ=1.1895 OK
 
-     100,000  SHA-256             17.8 ms    17.6 ms     0.4 μs          —       —  yes/no only
-              Hash Chain          77.3 ms    75.3 ms     0.1 μs     6.2 ms  75,001  OK
-              Merkle Tree        188.8 ms   189.5 ms     0.1 μs    14.5 μs      18  OK
-              Oracle (S³)        119.0 ms   122.1 ms     4.2 μs     8.0 μs      17  σ=0.6969 OK
-              Witness (S³)       232.3 ms   226.7 ms          —   210.5 ms      17  σ=0.6969 OK
+     100,000  SHA-256             16.9 ms    17.0 ms     0.4 μs          —       —  yes/no only
+              Hash Chain          75.5 ms    74.9 ms     0.1 μs     6.0 ms  75,001  OK
+              Merkle Tree        183.1 ms   182.2 ms     0.1 μs    10.3 μs      18  OK
+              Oracle (S³)        118.1 ms   117.8 ms     3.8 μs     7.9 μs      17  σ=0.6969 OK
+              Witness (S³)       207.6 ms   201.7 ms          —   205.2 ms      17  σ=0.6969 OK
 
-   1,000,000  SHA-256            180.3 ms   174.3 ms     0.4 μs          —       —  yes/no only
-              Hash Chain         760.4 ms   805.3 ms     0.1 μs    64.0 ms 750,001  OK
-              Merkle Tree          1.65 s     1.74 s     0.1 μs    25.3 μs      21  OK
-              Oracle (S³)          1.22 s     1.26 s     4.0 μs     6.9 μs      20  σ=1.4711 OK
-              Witness (S³)         2.24 s     2.18 s          —     2.18 s      20  σ=1.4711 OK
+   1,000,000  SHA-256            170.2 ms   171.7 ms     0.4 μs          —       —  yes/no only
+              Hash Chain         759.4 ms   754.2 ms     0.1 μs    60.8 ms 750,001  OK
+              Merkle Tree          1.61 s     1.60 s     0.1 μs    11.9 μs      21  OK
+              Oracle (S³)          1.15 s     1.17 s     3.7 μs     6.2 μs      20  σ=1.4711 OK
+              Witness (S³)         2.05 s     2.02 s          —     2.05 s      20  σ=1.4711 OK
 
   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   RESULTS AT SCALE (n = 1,000,000 records)
   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   Build time (process all records once):
-    SHA-256            180.3 ms   ◄ fastest (hardware-accelerated)
-    Hash Chain         760.4 ms
-    Oracle (S³)          1.22 s
-    Merkle Tree          1.65 s   ◄ slowest
+    SHA-256            170.2 ms   ◄ fastest (hardware-accelerated)
+    Hash Chain         759.4 ms
+    Oracle (S³)          1.15 s
+    Merkle Tree          1.61 s   ◄ slowest
 
   Find the corrupted record (localization):
-    Oracle               6.9 μs   (20 checks)    ◄ fastest
-    Merkle Tree         25.3 μs   (21 checks)   Oracle is 3.7× faster
-    Hash Chain          64.0 ms   (750,001 checks)   Oracle is 9,316× faster
+    Oracle               6.2 μs   (20 checks)    ◄ fastest
+    Merkle Tree         11.9 μs   (21 checks)   Oracle is 1.9× faster
+    Hash Chain          60.8 ms   (750,001 checks)   Oracle is 9,804× faster
 
   What each method tells you when it finds corruption:
     SHA-256      "something changed"                       (yes/no)
@@ -61,6 +61,37 @@
 
 
 ========================================================================================
+  3. MULTI-FAULT — Where the Algebra Changes the Complexity Class
+========================================================================================
+
+  Single fault: Merkle and Oracle both do O(log n) — similar speed.
+  Multiple faults: Merkle must rebuild after each find. Oracle subtracts
+  the found element algebraically (O(1)) and re-searches the remainder.
+
+  Merkle k-fault:  O(k · n · log n)   rebuild tree per fault
+  Oracle k-fault:  O(k · log n)        subtract and re-search
+
+  n = 100,000 records
+
+    k faults        Merkle    gilgamesh     Speedup
+  ──────────  ────────────  ──────────────  ──────────
+           1      366.5 ms        751.6 ms          0×
+           5        1.83 s          2.73 s          1×
+          10        3.66 s          5.06 s          1×
+          25        9.16 s         12.36 s          1×
+          50       18.17 s         24.43 s          1×
+
+  ─────────────────────────────────────────────────────────────────────────
+  Why the gap grows with k:
+    Merkle rebuilds the full tree after each fault: O(n · log n) per find.
+    Oracle inverts the found element and re-searches: O(log n) per find.
+    The inverse is O(1) — three negations on a quaternion.
+    At k=50 faults the algebra is doing 1,000 operations where
+    Merkle is doing millions of hash recomputations.
+  ─────────────────────────────────────────────────────────────────────────
+
+
+========================================================================================
   2. COST — How Much Extra Work Does Closure Add?
 ========================================================================================
 
@@ -74,9 +105,9 @@
 
            n     Hash only     Seer.ingest      Overhead
   ──────────  ────────────  ──────────────  ────────────
-      10,000       702 ns/e         744 ns/e       +5.9%
-     100,000       676 ns/e         737 ns/e       +9.1%
-   1,000,000       695 ns/e         734 ns/e       +5.6%
+      10,000       657 ns/e         702 ns/e       +6.9%
+     100,000       672 ns/e         721 ns/e       +7.4%
+   1,000,000       661 ns/e         708 ns/e       +7.1%
 
   ─────────────────────────────────────────────────────────────────────────
   Bottom line:

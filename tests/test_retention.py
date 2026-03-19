@@ -1,4 +1,4 @@
-"""Tests for closure_sdk.retention — RetentionWindow and localize_all."""
+"""Tests for closure_sdk.retention — RetentionWindow and gilgamesh."""
 
 from __future__ import annotations
 
@@ -40,30 +40,30 @@ def test_retention_window_repr() -> None:
     assert "records=2" in repr(window)
 
 
-def test_localize_all_finds_missing() -> None:
+def test_gilgamesh_finds_missing() -> None:
     src = [b"a", b"b", b"c", b"d"]
     tgt = [b"a", b"c", b"d"]  # b"b" missing
 
-    faults = closure.localize_all(src, tgt)
+    faults = closure.gilgamesh(src, tgt)
     assert len(faults) >= 1
     missing = [f for f in faults if f.incident_type == "missing"]
     assert len(missing) >= 1
     assert missing[0].record == b"b"
 
 
-def test_localize_all_finds_reorder() -> None:
+def test_gilgamesh_finds_reorder() -> None:
     src = [b"a", b"b", b"c"]
     tgt = [b"a", b"c", b"b"]  # b and c swapped
 
-    faults = closure.localize_all(src, tgt)
+    faults = closure.gilgamesh(src, tgt)
     assert len(faults) >= 1
-    reorders = [f for f in faults if f.incident_type == "content_mismatch"]
+    reorders = [f for f in faults if f.incident_type == "reorder"]
     assert len(reorders) >= 1
 
 
-def test_localize_all_coherent_returns_empty() -> None:
+def test_gilgamesh_coherent_returns_empty() -> None:
     records = [b"a", b"b", b"c"]
-    faults = closure.localize_all(records, records)
+    faults = closure.gilgamesh(records, records)
     assert faults == []
 
 

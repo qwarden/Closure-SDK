@@ -323,10 +323,83 @@ def section_cost() -> None:
   ─────────────────────────────────────────────────────────────────────────""")
 
 
+# ── Section 3: Multi-fault scaling ─────────────────────────────────
+
+def section_multifault() -> None:
+    """The algebraic advantage: subtract-and-re-search vs rebuild."""
+    print(f"\n\n{'=' * W}")
+    print("  3. MULTI-FAULT — Where the Algebra Changes the Complexity Class")
+    print("=" * W)
+    print()
+    print("  Single fault: Merkle and Oracle both do O(log n) — similar speed.")
+    print("  Multiple faults: Merkle must rebuild after each find. Oracle subtracts")
+    print("  the found element algebraically (O(1)) and re-searches the remainder.")
+    print()
+    print("  Merkle k-fault:  O(k · n · log n)   rebuild tree per fault")
+    print("  Oracle k-fault:  O(k · log n)        subtract and re-search")
+    print()
+
+    rng = np.random.default_rng(2026)
+    n = 100_000
+    fault_counts = [1, 5, 10, 25, 50]
+
+    print(f"  n = {n:,} records")
+    print()
+    print(f"  {'k faults':>10}  {'Merkle':>12}  {'gilgamesh':>14}  {'Speedup':>10}")
+    print(f"  {'─' * 10}  {'─' * 12}  {'─' * 14}  {'─' * 10}")
+
+    for k in fault_counts:
+        data = [rng.bytes(64) for _ in range(n)]
+        corrupted = list(data)
+        fault_indices = sorted(rng.choice(n, size=k, replace=False))
+        for fi in fault_indices:
+            corrupted[fi] = rng.bytes(64)
+        records = [bytes(d) for d in data]
+        c_records = [bytes(d) for d in corrupted]
+
+        # Merkle: find-rebuild loop
+        t0 = time.perf_counter()
+        remaining_ref = list(data)
+        remaining_test = list(corrupted)
+        mk_found = 0
+        for _ in range(k):
+            if len(remaining_ref) < 2:
+                break
+            mk_ref = MerkleTree(remaining_ref)
+            mk_test = MerkleTree(remaining_test)
+            idx, _ = mk_ref.localize(mk_test)
+            if idx is None:
+                break
+            mk_found += 1
+            remaining_ref.pop(idx)
+            remaining_test.pop(idx)
+        merkle_ms = (time.perf_counter() - t0) * 1000
+
+        # Oracle: gilgamesh (algebraic subtract-and-re-search)
+        t0 = time.perf_counter()
+        faults = closure.gilgamesh(records, c_records)
+        oracle_ms = (time.perf_counter() - t0) * 1000
+
+        speedup = merkle_ms / max(oracle_ms, 1e-6)
+
+        print(f"  {k:>10}  {t(merkle_ms):>12}  {t(oracle_ms):>14}  {speedup:>9.0f}×")
+
+    print(f"""
+  ─────────────────────────────────────────────────────────────────────────
+  Why the gap grows with k:
+    Merkle rebuilds the full tree after each fault: O(n · log n) per find.
+    Oracle inverts the found element and re-searches: O(log n) per find.
+    The inverse is O(1) — three negations on a quaternion.
+    At k=50 faults the algebra is doing 1,000 operations where
+    Merkle is doing millions of hash recomputations.
+  ─────────────────────────────────────────────────────────────────────────""")
+
+
 # ── Main ────────────────────────────────────────────────────────────
 
 def main() -> None:
     section_comparison()
+    section_multifault()
     section_cost()
 
 

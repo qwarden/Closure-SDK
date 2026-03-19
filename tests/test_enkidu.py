@@ -1,4 +1,4 @@
-"""Tests for StreamClassifier — the online matcher in canon.py.
+"""Tests for Enkidu — the online matcher in canon.py.
 
 The classifier answers one binary question per cycle for each unresolved
 record: is this an invertibility of payload (missing) or position (reorder)?
@@ -15,7 +15,7 @@ into a bounded binary decision.
 from __future__ import annotations
 
 import closure_sdk as closure
-from closure_sdk import StreamClassifier, IncidentReport
+from closure_sdk import Enkidu, IncidentReport
 
 
 # ── Basic matching ───────────────────────────────────────────────────
@@ -23,7 +23,7 @@ from closure_sdk import StreamClassifier, IncidentReport
 
 def test_coherent_records_produce_no_incidents() -> None:
     """Same record on both sides within the same cycle → silent match."""
-    c = StreamClassifier()
+    c = Enkidu()
 
     # Source gets record, then target gets same record
     assert c.ingest(b"a", 0, "source") is None
@@ -38,7 +38,7 @@ def test_coherent_records_produce_no_incidents() -> None:
 
 def test_multiple_coherent_records() -> None:
     """A full coherent stream produces zero incidents."""
-    c = StreamClassifier()
+    c = Enkidu()
 
     for i in range(20):
         rec = f"record-{i}".encode()
@@ -54,7 +54,7 @@ def test_multiple_coherent_records() -> None:
 
 def test_missing_from_target_promoted_after_grace() -> None:
     """Record on source with no match → promoted to missing after one cycle."""
-    c = StreamClassifier()
+    c = Enkidu()
 
     c.ingest(b"only-source", 0, "source")
 
@@ -71,7 +71,7 @@ def test_missing_from_target_promoted_after_grace() -> None:
 
 def test_missing_from_source_promoted_after_grace() -> None:
     """Record on target with no match → promoted to missing (absent from source)."""
-    c = StreamClassifier()
+    c = Enkidu()
 
     c.ingest(b"only-target", 5, "target")
     incidents = c.advance_cycle()
@@ -85,7 +85,7 @@ def test_missing_from_source_promoted_after_grace() -> None:
 
 def test_grace_period_holds_during_same_cycle() -> None:
     """Records added in the current cycle are NOT promoted yet."""
-    c = StreamClassifier()
+    c = Enkidu()
 
     # Advance to cycle 1 first (empty)
     c.advance_cycle()
@@ -104,8 +104,8 @@ def test_grace_period_holds_during_same_cycle() -> None:
 
 def test_late_arrival_reclassifies_to_reorder() -> None:
     """Record arrives on source, promoted to missing, then arrives on target
-    → reclassified from missing to reorder (content_mismatch)."""
-    c = StreamClassifier()
+    → reclassified from missing to reorder."""
+    c = Enkidu()
 
     # Source gets record
     c.ingest(b"late", 0, "source")
@@ -120,7 +120,7 @@ def test_late_arrival_reclassifies_to_reorder() -> None:
 
     # Should be reclassified to reorder
     assert result is not None
-    assert result.incident_type == "content_mismatch"
+    assert result.incident_type == "reorder"
     assert result.source_index == 0
     assert result.target_index == 3
     assert c.reclassified_count == 1
@@ -128,7 +128,7 @@ def test_late_arrival_reclassifies_to_reorder() -> None:
 
 def test_silent_resolve_within_grace_period() -> None:
     """Record arrives on both sides within the grace period → no incident at all."""
-    c = StreamClassifier()
+    c = Enkidu()
 
     # Source gets record
     c.ingest(b"quick", 0, "source")
@@ -150,7 +150,7 @@ def test_silent_resolve_within_grace_period() -> None:
 
 def test_multiple_missing_records_chain() -> None:
     """Two missing records in a row — each gets the same treatment."""
-    c = StreamClassifier()
+    c = Enkidu()
 
     c.ingest(b"first", 0, "source")
     c.ingest(b"second", 1, "source")
@@ -164,7 +164,7 @@ def test_multiple_missing_records_chain() -> None:
 
 def test_mixed_missing_and_late() -> None:
     """One record stays missing, another arrives late → one missing, one reorder."""
-    c = StreamClassifier()
+    c = Enkidu()
 
     c.ingest(b"will-stay-missing", 0, "source")
     c.ingest(b"will-arrive-late", 1, "source")
@@ -176,7 +176,7 @@ def test_mixed_missing_and_late() -> None:
     # The late one arrives on target
     result = c.ingest(b"will-arrive-late", 5, "target")
     assert result is not None
-    assert result.incident_type == "content_mismatch"
+    assert result.incident_type == "reorder"
 
     # The other one stays missing — no further reclassification
     assert c.reclassified_count == 1
@@ -190,7 +190,7 @@ def test_error_chain_same_solution_each_step() -> None:
     """After a misalignment, the next step is the same case.
     Either a late record arrives (reorder) or another missing arrives.
     The grace period handles both identically."""
-    c = StreamClassifier()
+    c = Enkidu()
 
     # Step 1: source gets A, target doesn't
     c.ingest(b"A", 0, "source")
@@ -205,12 +205,12 @@ def test_error_chain_same_solution_each_step() -> None:
     # Step 3: target finally gets A (late arrival → reorder)
     result_a = c.ingest(b"A", 0, "target")
     assert result_a is not None
-    assert result_a.incident_type == "content_mismatch"
+    assert result_a.incident_type == "reorder"
 
     # Step 4: target finally gets B (late arrival → reorder)
     result_b = c.ingest(b"B", 1, "target")
     assert result_b is not None
-    assert result_b.incident_type == "content_mismatch"
+    assert result_b.incident_type == "reorder"
 
     assert c.reclassified_count == 2
     assert c.unresolved_source == 0
@@ -221,7 +221,7 @@ def test_error_chain_same_solution_each_step() -> None:
 
 
 def test_reset_clears_all_state() -> None:
-    c = StreamClassifier()
+    c = Enkidu()
     c.ingest(b"a", 0, "source")
     c.advance_cycle()
     assert c.unresolved_source == 1
@@ -234,10 +234,10 @@ def test_reset_clears_all_state() -> None:
 
 
 def test_repr() -> None:
-    c = StreamClassifier()
+    c = Enkidu()
     c.ingest(b"a", 0, "source")
     r = repr(c)
-    assert "StreamClassifier" in r
+    assert "Enkidu" in r
     assert "unresolved=1" in r
 
 
@@ -252,19 +252,19 @@ def test_exchange_symmetry_documented() -> None:
     distinguished, the adapter includes a signifier in the payload.
     This is a property of the geometry, not a limitation.
     """
-    # Static mode: localize_all treats identical records as interchangeable
+    # Static mode: gilgamesh treats identical records as interchangeable
     src = [b"a", b"dup", b"dup", b"b"]
     tgt = [b"a", b"dup", b"dup", b"b"]
-    faults = closure.localize_all(src, tgt)
+    faults = closure.gilgamesh(src, tgt)
     assert faults == []  # identical sequences → no faults
 
     # Swapping identical records is invisible to the algebra
     tgt_swapped = [b"a", b"dup", b"dup", b"b"]  # same bytes, same result
-    faults_swapped = closure.localize_all(src, tgt_swapped)
+    faults_swapped = closure.gilgamesh(src, tgt_swapped)
     assert faults_swapped == []
 
     # Stream mode: identical payloads match by content, not position
-    c = StreamClassifier()
+    c = Enkidu()
     c.ingest(b"dup", 0, "source")
     result = c.ingest(b"dup", 5, "target")  # different position, same bytes
     assert result is None  # silent resolve — they're the same element
@@ -277,7 +277,7 @@ def test_exchange_symmetry_documented() -> None:
 
 
 def test_invalid_side_raises_value_error() -> None:
-    c = StreamClassifier()
+    c = Enkidu()
     try:
         c.ingest(b"x", 0, "soruce")
         assert False, "should have raised ValueError"
