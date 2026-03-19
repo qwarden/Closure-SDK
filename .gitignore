@@ -1,5 +1,49 @@
-# Rebasing for 1.0 — everything local until SDK refactor is complete
+# Ignore everything, surface only the SDK package
 *
+
+# Documentation
 !.gitignore
 !README.md
 !LICENSE
+!CLOSURE_SDK.md
+!TEST_RESULTS.md
+
+# Build config
+!pyproject.toml
+
+# SDK (Python)
+!closure_sdk/
+!closure_sdk/__init__.py
+!closure_sdk/ops.py
+!closure_sdk/lenses.py
+!closure_sdk/state.py
+!closure_sdk/canon.py
+!closure_sdk/valence.py
+!closure_sdk/hopf.py
+
+# Compiled extension
+!closure_rs/
+!closure_rs/__init__.py
+!closure_rs/*.so
+
+# Rust source
+!rust/
+!rust/Cargo.toml
+!rust/Cargo.lock
+!rust/pyproject.toml
+!rust/src/
+!rust/src/**
+
+# Tests
+!tests/
+!tests/__init__.py
+!tests/conftest.py
+!tests/test_sdk.py
+!tests/test_retention.py
+!tests/test_stream_classifier.py
+!tests/test_theorems.py
+!tests/test_groups.py
+!tests/test_path.py
+!tests/test_hierarchy.py
+!tests/test_fast_path.py
+!tests/test_stream_monitor.py

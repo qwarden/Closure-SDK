@@ -1,0 +1,20 @@
+[package]
+name = "closure-rs"
+version = "0.1.0"
+edition = "2021"
+description = "Closure verification on Lie groups — geometric data structure for O(1) coherence checking"
+license = "AGPL-3.0-only"
+
+[lib]
+name = "closure_rs"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+pyo3 = { version = "0.23", features = ["extension-module"] }
+numpy = "0.23"
+rand = "0.8"
+sha2 = "0.10"
+
+[profile.release]
+opt-level = 3
+lto = true
