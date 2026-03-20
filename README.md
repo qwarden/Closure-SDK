@@ -229,7 +229,7 @@ This is a building block — you embed it in the systems you already run. If you
 | `tests/` | 207 tests — SDK algebra, convergence, streaming, binding, CLI integration |
 | `benchmarks/` | Head-to-head against SHA-256, hash chains, and Merkle trees |
 | `examples/` | Worked examples: drift detection, incident classification, streaming, binding, channels |
-| `brahman/` | S³ Transformer — learned composition on the sphere, from RNN to geodesic attention |
+| `brahman/` | What happens when you teach a neural network to compose on S³ instead of ℝⁿ. Start here if you're curious where this goes next |
 | `CLOSURE_SDK.md` | Full technical documentation — theory, architecture, complete API reference |
 | `CLOSURE_CLI.md` | CLI documentation — all three commands, options, output formats, architecture |
 
