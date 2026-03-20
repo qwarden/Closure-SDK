@@ -278,6 +278,16 @@ These are theorems, not heuristics. Full proofs are in `CLOSURE_SDK.md`.
 pytest tests/ -q   # 207 tests
 ```
 
+## Support
+
+I'm a psychology student, published neuroscientist (1 small paper lmao) and independent researcher in information geometry and meaning! Every paper and line of code was done on my own time and released for free. If this is useful to you, any donations are very much appreciated.
+
+| Method | Address |
+|---|---|
+| BTC | `155jaKugGGhdwX2Dp55bfHWpWbWD3Gr3PG` |
+| ETH (ERC-20) | `0x31f0253180b03c16a0aa2d7091311d7363ef22a4` |
+| PIX (Brazil) | `walter.h057@gmail.com` |
+
 ## License
 
 AGPL-3.0-only
