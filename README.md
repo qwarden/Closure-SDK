@@ -1,6 +1,16 @@
 # Closure SDK
 
+**Your pipeline is dropping records?** — one pass tells you which ones, how many, and if they're missing or reordered. → [SDK], [CLI]
 
+**Need your system to maintain its identity and detect any change to the bit level? Replicas drifting? Tampering protection?** — Gilgamesh composes both sequences on the sphere and classifies every discrepancy in a single walk, almost instantly, nothing passes.→ [Gilgamesh]
+
+**Trust? Two parties need to verify they hold the same data without sharing it?** — each side composes locally, exchanges 16 bytes, neither can lie nor hide information from the other and never touch the original content → [Oracle](), [prism], [bind]
+
+**Need your system to learn from mistakes and update priors immediately?** — Enkidu classifies every record as it arrives, and reclassifies when a new one shows up, Enkidu IS learning → [Enkidu]
+
+**Your sensor fleet has a bad node and you're digging through logs?** — every sensor composes its own stream. The moment one diverges, before you pull a single log. → [Seer]
+
+**You want to build AGI? In your room?** — the geometry is S³, the architecture is an 18-step spec, steps 1-2 are validated with 1,031 parameters. Check → [Brahman]
 
 ## What is this
 
