@@ -4,10 +4,11 @@ Two composition modes, same classification:
 
     Static mode (gilgamesh):
         Both streams are complete. Compose both on S³, binary-search for
-        the first divergence, classify it, remove the pair, recompose,
-        repeat. Because we have the full picture, we know instantly
-        whether a record is missing or reordered.
-        O(k · n · log n) where k is the number of incidents.
+        the first divergence, then walk both chains with two pointers.
+        At each mismatch the Hopf fiber classifies: missing (W axis)
+        or reorder (RGB axis). Because we have the full picture, we
+        know instantly whether a record is missing or reordered.
+        O(n + log n) — compose once, classify all.
 
     Stream mode (Enkidu):
         Records arrive one at a time. We cannot see the future, so every
@@ -152,11 +153,12 @@ class Enkidu:
     """
 
     def __init__(self) -> None:
-        # Unmatched pools: payload → (position, cycle_added, incident_or_None)
+        # Unmatched pools: payload → list of (position, cycle_added, incident_or_None)
+        # A list so duplicate payloads stack instead of overwriting.
         # incident is None while the record is still in its grace period.
         # Once promoted, it holds the IncidentReport so we can reclassify.
-        self._unmatched_source: dict[bytes, tuple[int, int, IncidentReport | None]] = {}
-        self._unmatched_target: dict[bytes, tuple[int, int, IncidentReport | None]] = {}
+        self._unmatched_source: dict[bytes, list[tuple[int, int, IncidentReport | None]]] = {}
+        self._unmatched_target: dict[bytes, list[tuple[int, int, IncidentReport | None]]] = {}
         self._cycle: int = 0
         self._reclassified: int = 0
 
@@ -178,9 +180,11 @@ class Enkidu:
         else:
             raise ValueError(f"side must be 'source' or 'target', got {side!r}")
 
-        if payload in other:
-            # Match found on the opposite side.
-            other_pos, _, incident = other.pop(payload)
+        if payload in other and other[payload]:
+            # Match found on the opposite side — consume the first entry.
+            other_pos, _, incident = other[payload].pop(0)
+            if not other[payload]:
+                del other[payload]
             src_pos = position if side == "source" else other_pos
             tgt_pos = position if side == "target" else other_pos
 
@@ -200,7 +204,7 @@ class Enkidu:
             return None
         else:
             # No match yet. Hold as unresolved for one grace period.
-            own[payload] = (position, self._cycle, None)
+            own.setdefault(payload, []).append((position, self._cycle, None))
             return None
 
     def advance_cycle(self) -> list[IncidentReport]:
@@ -217,29 +221,31 @@ class Enkidu:
         self._cycle += 1
         new_incidents: list[IncidentReport] = []
 
-        for payload, (pos, cycle_added, incident) in list(self._unmatched_source.items()):
-            if incident is None and cycle_added < self._cycle:
-                inc = IncidentReport(
-                    incident_type="missing",
-                    source_index=pos,
-                    target_index=None,
-                    record=payload,
-                    checks=0,
-                )
-                self._unmatched_source[payload] = (pos, cycle_added, inc)
-                new_incidents.append(inc)
+        for payload, entries in list(self._unmatched_source.items()):
+            for idx, (pos, cycle_added, incident) in enumerate(entries):
+                if incident is None and cycle_added < self._cycle:
+                    inc = IncidentReport(
+                        incident_type="missing",
+                        source_index=pos,
+                        target_index=None,
+                        record=payload,
+                        checks=0,
+                    )
+                    entries[idx] = (pos, cycle_added, inc)
+                    new_incidents.append(inc)
 
-        for payload, (pos, cycle_added, incident) in list(self._unmatched_target.items()):
-            if incident is None and cycle_added < self._cycle:
-                inc = IncidentReport(
-                    incident_type="missing",
-                    source_index=None,
-                    target_index=pos,
-                    record=payload,
-                    checks=0,
-                )
-                self._unmatched_target[payload] = (pos, cycle_added, inc)
-                new_incidents.append(inc)
+        for payload, entries in list(self._unmatched_target.items()):
+            for idx, (pos, cycle_added, incident) in enumerate(entries):
+                if incident is None and cycle_added < self._cycle:
+                    inc = IncidentReport(
+                        incident_type="missing",
+                        source_index=None,
+                        target_index=pos,
+                        record=payload,
+                        checks=0,
+                    )
+                    entries[idx] = (pos, cycle_added, inc)
+                    new_incidents.append(inc)
 
         return new_incidents
 
@@ -251,12 +257,12 @@ class Enkidu:
     @property
     def unresolved_source(self) -> int:
         """Records on the source side still waiting for a match."""
-        return len(self._unmatched_source)
+        return sum(len(entries) for entries in self._unmatched_source.values())
 
     @property
     def unresolved_target(self) -> int:
         """Records on the target side still waiting for a match."""
-        return len(self._unmatched_target)
+        return sum(len(entries) for entries in self._unmatched_target.values())
 
     @property
     def cycle(self) -> int:
@@ -296,22 +302,8 @@ def gilgamesh(
         return []
 
     # --- compose both on S³, localize ---
-    group = closure_rs.sphere()
-
-    def _embed_all(records: list[bytes]) -> np.ndarray:
-        if not records:
-            return np.empty((0, 4), dtype=np.float64)
-        elems = [
-            np.asarray(
-                closure_rs.closure_element_from_raw_bytes(GROUP_SPEC, [r]),
-                dtype=np.float64,
-            )
-            for r in records
-        ]
-        return np.ascontiguousarray(np.vstack(elems), dtype=np.float64)
-
-    src_path = closure_rs.GeometricPath.from_elements(group, _embed_all(source_records))
-    tgt_path = closure_rs.GeometricPath.from_elements(group, _embed_all(target_records))
+    src_path = closure_rs.path_from_raw_bytes(GROUP_SPEC, source_records) if source_records else closure_rs.GeometricPath.from_elements(closure_rs.sphere(), np.empty((0, 4), dtype=np.float64))
+    tgt_path = closure_rs.path_from_raw_bytes(GROUP_SPEC, target_records) if target_records else closure_rs.GeometricPath.from_elements(closure_rs.sphere(), np.empty((0, 4), dtype=np.float64))
     first_fault, checks = src_path.localize_against(tgt_path)
 
     if first_fault is None:

@@ -37,6 +37,8 @@ Answer formats:
     LocalizationResult — position + search steps
 """
 
+__version__ = "1.0.0"
+
 from .lenses import Seer, Oracle, Witness
 from .state import ClosureState, CompareResult, LocalizationResult
 from .ops import embed, compose, invert, sigma, diff, compare

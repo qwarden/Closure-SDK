@@ -1,6 +1,11 @@
 # Ignore everything, surface only the SDK package
 *
 
+# CI
+!.github/
+!.github/workflows/
+!.github/workflows/test.yml
+
 # Documentation
 !.gitignore
 !README.md
@@ -49,6 +54,17 @@
 !tests/test_fast_path.py
 !tests/test_stream_monitor.py
 !tests/test_bind.py
+
+# Type stubs
+!closure_sdk/py.typed
+
+# Examples
+!examples/
+!examples/01_detect_drift.py
+!examples/02_find_incidents.py
+!examples/03_stream_classify.py
+!examples/04_bind.py
+!examples/05_color_channels.py
 
 # Benchmarks and demos
 !benchmarks/

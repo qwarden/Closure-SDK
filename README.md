@@ -1,25 +1,31 @@
 # Closure SDK
 
-A suite of tools for composing and interacting with a primitive
-data structure — the geometry of ordered information.
+A primitive data structure — the geometry of ordered information.
 
 ## What is this
 
-A primitive data structure. Not a library on top of hashes or Merkle
-trees — a fundamental structure, like a stack or a queue or a
-blockchain, that everything else builds on.
+A primitive data structure, in the same sense that a stack, a queue, or
+a blockchain is a primitive data structure. A stack is LIFO; a queue is
+FIFO; a hash map is key-value; a blockchain is a hash chain. This one
+composes ordered data on S³ — the 3-sphere of unit quaternions, which
+is the richest space where sequential composition is still associative.
+The structure follows from two axioms and Hurwitz's theorem, and every
+other ordered structure projects from it.
 
-A stack is LIFO, a queue is FIFO, a hash map is key-value, a
-blockchain is a hash chain — all invented structures. This one isn't
-invented. It is what happens when you compose ordered data on the
-geometry that the math actually demands (S³, unit quaternions, the
-richest space where sequential composition is still associative).
-The structure falls out of two axioms and Hurwitz's theorem.
-We implemented it.
+Raw bytes go in, SHA-256 hashes them, and the hash composes on the
+sphere. The result is a point on S³ that cannot be reversed to the
+original data but can be composed, diffed, inverted, and decomposed
+into color channels — a hash you can do algebra on.
 
-Any data that can be serialized to bytes can be composed. Databases,
+Two systems that compose the same data land on the same point, and they
+can verify this by exchanging elements without ever exchanging the data
+itself. Because the elements are built on a cryptographic hash, neither
+side can fake agreement: the spheres cannot lie to each other, even
+though neither one knows the other's content or the hash that created it.
+
+Any data that can be serialized to bytes can be composed — databases,
 blockchains, gene sequences, financial ledgers, network packets,
-satellite telemetry, event streams — anything ordered.
+satellite telemetry, event streams, anything ordered.
 
 ## Why give your data this shape
 
@@ -39,12 +45,14 @@ combination:
                             from another, diff two snapshots, patch a third.
                             Without touching raw data.
     Cryptographic summary — embed() hashes with SHA-256 before composing.
-                            The result is a 32-byte summary that cannot be
-                            reversed to the original data, but can be
-                            composed, diffed, inverted, and decomposed into
-                            channels. A hash you can do algebra on.
-    Identity binding      — two systems prove they hold the same data by
-                            comparing elements, never the data itself.
+                            The element cannot be reversed to the original
+                            data, but can be composed, diffed, inverted, and
+                            decomposed into channels. A hash you can do
+                            algebra on.
+    Identity binding      — two systems verify they hold the same data by
+                            exchanging elements, never the data itself.
+                            Neither side can fake agreement. Neither side
+                            learns the other's content.
     Streaming             — classify incidents as records arrive, before
                             either stream is complete.
     Proven guarantees     — exact sensitivity (Theorem 1) and uniform
@@ -109,7 +117,7 @@ valence = closure.expose(element)
 
 | Path | What it is |
 |---|---|
-| `closure_sdk/` | The SDK — 21 symbols. Compose, compare, localize, classify, bind, expose. |
+| `closure_sdk/` | The SDK — 22 symbols. Compose, compare, localize, classify, bind, expose. |
 | `closure_rs/` | The engine — Rust core with Python bindings. S³ composition, embedding, search. |
 | `rust/` | Rust source for the engine. |
 | `tests/` | 192 tests covering algebra, convergence, paths, hierarchy, streaming, binding. |
@@ -125,11 +133,11 @@ raw bytes → embed (SHA-256 → S³) → compose on the sphere → measure
     Oracle      recorder, O(n), locates in O(log n)
     Witness     reference template, verifies against known-good
 
-    gilgamesh   static: two complete sequences → every incident
+    Gilgamesh   static: two complete sequences → every incident
     Enkidu      stream: records arrive in real time → classify on arrival
 
-    bind        two elements → equal, inverse, or disordered
-    expose      any element → color channels (σ, RGB, W)
+    Bind        two elements → equal, inverse, or disordered
+    Expose      any element → color channels (σ, RGB, W)
 ```
 
 ## Tests

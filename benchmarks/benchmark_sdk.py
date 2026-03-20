@@ -2,8 +2,8 @@
 
 Three sections:
   1. Comparison  — side-by-side at multiple scales (build, detect, localize)
-  2. Localization — Witness (hierarchical) and Oracle (path) search performance
-  3. Cost        — isolate composition overhead from hashing
+  2. Cost        — isolate composition overhead from hashing
+  3. Multi-fault — where the algebra changes the complexity class
 """
 
 from __future__ import annotations
