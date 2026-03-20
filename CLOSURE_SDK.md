@@ -79,7 +79,7 @@ spatial: where, exactly, do they differ, and how many times? Compose
 both on S³, and the geometry already encodes every divergence. Walk
 the disagreement region once, ask one question per record — does the
 other side have it, or doesn't it? — and the Hopf fiber classifies
-the answer. O(n + log n).
+the answer. O(n) total: compose both once, localize in O(log n), walk once.
 
 A quantitative contribution — efficient solutions for comparing data
 in files exist; the advance is precision and efficiency on a new
@@ -189,8 +189,8 @@ THE SPHERE (S³ — where everything lives)
 │
 ├── LENSES (three focal lengths)         lenses.py
 │   ├── Seer                             lenses.py:34    sensor, O(1), detects drift
-│   ├── Oracle                           lenses.py:99    recorder, O(n), locates in O(log n)
-│   └── Witness                          lenses.py:200   reference template, verifies
+│   ├── Oracle                           lenses.py:106   recorder, O(n), locates in O(log n)
+│   └── Witness                          lenses.py:207   reference template, verifies
 │
 ├── ANSWER FORMATS                       state.py
 │   ├── ClosureState                     state.py:24     a point on the hypersphere
@@ -204,20 +204,20 @@ THE CANON (finds what broke — two modes, same classification)
 │  and classifies WHAT: missing (W broke) or reorder (RGB broke).
 │
 ├── STATIC MODE (both streams complete)
-│   └── gilgamesh(source, target)     canon.py:280    compose, walk both chains, classify
-│                                                        O(n + log n)
+│   └── gilgamesh(source, target)     canon.py:286    compose, walk both chains, classify
+│                                                        O(n)
 │
 ├── STREAM MODE (records arrive one at a time)
-│   └── Enkidu                 canon.py:132    match, wait, promote, reclassify
+│   └── Enkidu                 canon.py:135    match, wait, promote, reclassify
 │       ├── .ingest(payload, pos, side)                  classify on arrival
 │       └── .advance_cycle()                             roll the counter, promote unresolved
 │                                                        one binary question per tick:
 │                                                        missing (payload) or reorder (position)?
 │
-├── IncidentReport                       canon.py:114    type + positions + payload + steps
+├── IncidentReport                       canon.py:117    type + positions + payload + steps
 │                                                        (missing = W broke, reorder = RGB broke)
 │
-└── RetentionWindow                      canon.py:72     evidence archive (raw records for investigation)
+└── RetentionWindow                      canon.py:75     evidence archive (raw records for investigation)
 │
 │
 THE CHAIN (Hopf projection → color channels)
@@ -233,15 +233,15 @@ THE CHAIN (Hopf projection → color channels)
 │   └── hopf_decompose                   hopf.py:48      → σ + RGB + W
 │
 ├── EXPOSE (public interface)            valence.py
-│   ├── expose(element)                  valence.py:94   any point → Valence
-│   ├── expose_incident(inc, drift)      valence.py:110  incident → IncidentValence
-│   └── bind(a, b)                       valence.py:139  two points → Binding
+│   ├── expose(element)                  valence.py:103  any point → Valence
+│   ├── expose_incident(inc, drift)      valence.py:119  incident → IncidentValence
+│   └── bind(a, b)                       valence.py:164  two points → Binding
 │                                                        equal, inverse, or disordered
 │
 └── CHANNELS                             valence.py
-    ├── Valence                          valence.py:51   σ + base(R,G,B) + phase(W)
-    ├── IncidentValence                  valence.py:65   channels + positions + payload + axis
-    └── Binding                          valence.py:139  relation + gap valence + σ
+    ├── Valence                          valence.py:60   σ + base(R,G,B) + phase(W)
+    ├── IncidentValence                  valence.py:74   channels + positions + payload + axis
+    └── Binding                          valence.py:148  relation + gap valence + σ
 
 
 PIPELINE (data flows top to bottom)
@@ -258,7 +258,7 @@ PIPELINE (data flows top to bottom)
     sigma() / compare()      ops.py:61 / :79 ───── TOOLS measure on the sphere
         │
         ├── coherent? → done
-        ├── bind(a, b) ─────── valence.py:139 ──── BINDING equal / inverse / disordered
+        ├── bind(a, b) ─────── valence.py:164 ──── BINDING equal / inverse / disordered
         │
         ▼
     gilgamesh()  ─┐
@@ -266,10 +266,10 @@ PIPELINE (data flows top to bottom)
     Enkidu ┘    static (complete) or stream (online)
         │
         ▼
-    expose_incident()        valence.py:110 ─────── CHAIN translates to channels
+    expose_incident()        valence.py:119 ─────── CHAIN translates to channels
         │
         ▼
-    IncidentValence          valence.py:65 ──────── labeled W + RGB + positions + axis
+    IncidentValence          valence.py:74 ──────── labeled W + RGB + positions + axis
         │
         ▼
     (application layer)      ───────────────────── human or system decides
@@ -277,7 +277,7 @@ PIPELINE (data flows top to bottom)
 
 FRONT DOOR
 
-    __init__.py              21 symbols exported
+    __init__.py              22 symbols exported
     closure_sdk/
       ops.py                 the sphere's tools (6)
       lenses.py              Seer, Oracle, Witness
@@ -702,7 +702,7 @@ diverge and classifies each incident as missing or reorder.
 
         Same binary question as Enkidu — existence or position — but
         answered immediately from the composed picture. Same two types.
-        Inverse resolution strategy. O(n + log n).
+        Inverse resolution strategy. O(n).
 
     Enkidu()
 

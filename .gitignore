@@ -75,3 +75,27 @@
 !benchmarks/outputs/benchmark_sdk.txt
 !benchmarks/outputs/demo_operations.txt
 !benchmarks/outputs/demo_stream.txt
+
+# CLI
+!CLOSURE_CLI.md
+!closure_cli/
+!closure_cli/__init__.py
+!closure_cli/__main__.py
+!closure_cli/formatter.py
+!closure_cli/identity.py
+!closure_cli/observer.py
+!closure_cli/reader.py
+!closure_cli/seeker.py
+
+# CLI tests
+!tests/test_cli.py
+
+# Test data (small files only — large datasets stay local)
+!data/
+!data/DATA_CATALOG.md
+!data/test_a.jsonl
+!data/test_b.jsonl
+!data/test_stress_a.jsonl
+!data/test_stress_b.jsonl
+!data/walmart_a_100.jsonl
+!data/walmart_b_100.jsonl

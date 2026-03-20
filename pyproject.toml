@@ -10,6 +10,9 @@ authors = [
 ]
 dependencies = ["numpy>=1.24"]
 
+[project.scripts]
+closure = "closure_cli.__main__:main"
+
 [project.optional-dependencies]
 dev = ["pytest>=7.0"]
 

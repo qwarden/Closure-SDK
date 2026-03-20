@@ -338,8 +338,8 @@ def section_multifault() -> None:
     print("  gilgamesh composes both sequences once, narrows to the dirty region,")
     print("  and classifies every fault in a single pass.")
     print()
-    print("  Merkle k-fault:  O(k · n · log n)   rebuild tree per fault")
-    print("  gilgamesh:       O(n + log n)        compose once, narrow, classify all")
+    print("  Merkle k-fault:  O(k · n)            rebuild tree per fault")
+    print("  gilgamesh:       O(n)                compose once, walk once, classify all")
     print()
 
     rng = np.random.default_rng(2026)
@@ -390,9 +390,9 @@ def section_multifault() -> None:
     print(f"""
   ─────────────────────────────────────────────────────────────────────────
   Why the gap grows with k:
-    Merkle rebuilds the full tree after each fault: O(n · log n) per find.
+    Merkle rebuilds the full tree after each fault: O(n) per find, so O(k · n) total.
     gilgamesh composes both sequences once, narrows to the dirty region,
-    and classifies every fault in a single walk. The cost is O(n + log n)
+    and classifies every fault in a single walk. The cost is O(n)
     regardless of how many faults exist. Merkle's cost scales with k;
     gilgamesh's does not.
   ─────────────────────────────────────────────────────────────────────────""")

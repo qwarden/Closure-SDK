@@ -8,7 +8,7 @@ Two composition modes, same classification:
         At each mismatch the Hopf fiber classifies: missing (W axis)
         or reorder (RGB axis). Because we have the full picture, we
         know instantly whether a record is missing or reordered.
-        O(n + log n) — compose once, classify all.
+        O(n) — compose both once, localize in O(log n), walk once.
 
     Stream mode (Enkidu):
         Records arrive one at a time. We cannot see the future, so every
