@@ -99,3 +99,12 @@
 !data/test_stress_b.jsonl
 !data/walmart_a_100.jsonl
 !data/walmart_b_100.jsonl
+
+# Brahman — S³ Transformer
+!brahman/
+!brahman/__init__.py
+!brahman/__main__.py
+!brahman/model.py
+!brahman/data.py
+!brahman/train.py
+!brahman/BRAHMAN.md
