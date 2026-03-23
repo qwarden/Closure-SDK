@@ -117,6 +117,7 @@
 !brahman/visual/train.py
 !brahman/visual/__init__.py
 !brahman/visual/BRAHMAN_VISUAL.md
+!brahman/visual/sweep_overhead.py
 
 # Paper
 !zeroth_law_full-1.pdf
