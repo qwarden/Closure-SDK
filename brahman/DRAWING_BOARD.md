@@ -530,6 +530,170 @@ it's processing meaning. It just resolves missing/reorder on its
 inputs and emits closure elements. Meaning emerges from the
 composition, not from the component.
 
+### The developmental staircase
+
+The layers are the same part, but they can't be built in any order.
+An eye without neural connections produces no vision. A motor system
+without sensory feedback produces no useful movement. Sensory, neural,
+and motor systems co-evolve — none works without the others.
+
+This is the Drosophila principle (da Silva, 2025, "The Geometrical
+Theory of Communication," Appendix A.1): researchers activated the
+Pax6/eyeless gene in Drosophila melanogaster to grow structurally
+complete eyes on legs and antennae. The eyes captured light. They
+produced no vision. Without neural pathways to process the signal
+and motor systems to act on it, the eye is a camera without a
+computer — data that cannot become meaningful information.
+
+The same principle governs the Brahman architecture. Each capability
+in the system requires the ones below it. The staircase:
+
+**Step 1: Balance (S3RNN on brackets).**
+
+The body discovers inverses. The RNN composes one step at a time,
+sequentially, no attention, no looking at the whole path. Open
+bracket = step away from identity. Close bracket = step back.
+This is not locomotion. This is homeostasis — the discovery that
+every departure has a return. Push requires pull. The most primitive
+motor fact. Balance before walking. Proved: 98.8% valid generation,
+inverses discovered from data alone, 1,031 parameters.
+
+The RNN is the motor system in isolation. It has no eye. It walks
+blind. But it learns the fundamental constraint: closure.
+
+**Step 2: Seeing (S3Transformer on grid walks).**
+
+The transformer with attention LOOKS at the whole sequence. It
+perceives "UP UP LEFT" and knows where it is relative to home.
+This is spatial perception. The grid walk is seeing, not walking —
+the model observes the path and predicts what closes it. Attention
+IS the eye: it attends to all positions, computes geodesic distances,
+and routes information. Proved: the sweep showed 0 attention layers
+= random. Attention is the perceptual mechanism.
+
+But the eye alone is a Drosophila eye on a leg. The seeing (grid
+walk perception) and the walking (bracket motor control) are
+separate systems in the experiments so far. An eye on a leg. A leg
+without an eye.
+
+**Step 3: See → Walk (directed generation).**
+
+The eye connects to the leg. The 98.3% closed walk generation is
+this — the transformer sees the path (attention) and generates the
+next step (prediction). Perception directs motor output. This is
+the moment the eye gets neural connections to the motor system.
+Not an eye on a leg. An eye connected to legs through processing.
+
+This is what the S3Transformer generation IS: the attention (seeing)
+informs the prediction head (motor output) which generates the
+token that closes the composition (directed step).
+
+**Step 4: Meaning → See (needs create direction).**
+
+The body has needs. Missing = food → the organism must move. This
+is the downward pipeline: the meaning layer (Layer N) detects an
+incident (hunger = missing), projects a target (go to food), and
+the seeing orients to it (attend to food's direction), which directs
+the walking (generate steps toward food).
+
+This is the first moment where the downward pipeline matters.
+Steps 1-3 are reactive — the system processes what arrives. Step 4
+is GOAL-DIRECTED — the system creates a target and acts toward it.
+The mind projects downward: "this is what must happen." The layers
+below decompose the target into action.
+
+From the Geometrical Theory appendix, this maps to the evolutionary
+progression:
+
+```
+Step 1 (Balance)   → Reaction:      stimulus-response (bacteria)
+Step 2 (See)       → Action:        contextual response (insects)
+Step 3 (See→Walk)  → Integration:   sensory-motor coupling
+Step 4 (Meaning)   → Cognition:     mental modeling (mammals)
+```
+
+Each step is the same information cycle (differentiate → integrate →
+act → feedback) operating with more degrees of freedom.
+
+**Step 5: Think (bidirectional pipeline, closed loop).**
+
+Before you speak, you simulate. The mind projects a meaning target
+downward through the layers. The layers decompose it into sentences,
+phrases, words, characters. But instead of emitting into the world,
+the result feeds back up through the upward pipeline. Does it close?
+Does the generated sequence, when perceived by the same system,
+compose to the meaning that was intended?
+
+This closed loop — generate internally, perceive the generation,
+check closure — IS thinking. It's the bidirectional pipeline
+running without external output. Internal simulation. Planning.
+
+This is where the Drosophila principle completes: the motor output
+(downward generation) connects back to the sensory input (upward
+perception) through internal wiring. The system can test actions
+before committing them. It can imagine a walk without walking. It
+can compose a sentence without speaking. The eye, the brain, and
+the legs are fully connected — not just forward (see → move) but
+in a loop (see → plan to move → simulate the result → check → then
+move or revise).
+
+From the evolutionary progression:
+
+```
+Step 5 (Think)     → Consciousness: self-modeling (humans)
+```
+
+Consciousness in the Geometrical Theory is the same information
+cycle applied to its own operations. Thinking IS the model processing
+its own output. The bidirectional pipeline is the geometric form of
+self-reference — the system composes, perceives its own composition,
+and adjusts. A = A verified through the system's own operation.
+
+**Step 6: Speak (language, open loop).**
+
+Speaking is thinking with external output. The same bidirectional
+pipeline, but the downward result emits into the world instead of
+feeding back internally. Characters come out. Another mind receives
+them through its own upward pipeline.
+
+Language is not a separate capability bolted on top. It IS the
+thinking loop opened outward. The same layers, the same algebra,
+the same identity at center. The only difference: the output goes
+to another mind instead of back to the self.
+
+### What the staircase means for implementation
+
+Each step in the staircase requires the ones below it:
+
+```
+PROVED (local CPU):
+  1. Balance  — S3RNN on brackets            ✓  (motor, blind)
+  2. See      — S3Transformer on grid walks  ✓  (perception, spatial)
+  3. See→Walk — Transformer generation       ✓  (sensory-motor coupling)
+
+NOT YET BUILT:
+  4. Meaning→See  — downward pipeline, goal-directed targets
+  5. Think        — bidirectional closed loop, internal simulation
+  6. Speak        — same loop, open to external output (language)
+```
+
+Steps 1-3 are proved. Steps 4-6 are the recursive Enkidu
+architecture — the layers described above, running bidirectionally,
+with the mind at center.
+
+The character-level language model (TinyStories) is Step 6. But you
+can't jump to Step 6 without Steps 4 and 5. A language model that
+generates without internal simulation (Step 5) is a Drosophila eye
+on a leg — it produces output but not meaning. A language model
+without goal-directed targets (Step 4) generates text but not
+communication.
+
+This is why the flat TinyStories run produced gibberish. It tried
+to jump from Step 3 (sensory-motor coupling) directly to Step 6
+(language) without the intermediate architecture. The recursive
+Enkidu with bidirectional flow IS Steps 4 and 5. They must be built
+before Step 6 produces meaningful language.
+
 ### Why the recursion solves the training bottleneck
 
 The flat TinyStories run threw 512 characters at one transformer.
