@@ -570,10 +570,139 @@ forces character embeddings into distinct, compositionally meaningful
 positions, then the recursion IS the anti-collapse mechanism, and
 Layer-0 cross-entropy is redundant.
 
-### Generative recursion (top-down)
+### The downward pipeline — why the mind is not a passive monitor
+
+The upward pipeline (characters → meaning) is perception: compose,
+emit, pass upstream. But the mind is not a data stream Enkidu
+sitting at the top waiting for records. The mind tolerates NO
+sustained decoherence. If missing = food, the organism dies. If
+missing = predator, the organism dies faster. The mind-level Enkidu
+has zero grace period for existential incidents.
+
+This means the upward pipeline is not just perception — it is a
+TEMPORAL BUFFER. Each layer compresses time:
+
+```
+Layer 0: ~10 characters/second (reading speed)
+Layer 1: ~2 morphemes/second (after composition)
+Layer 2: ~0.5 words/second
+Layer 3: ~0.1 phrases/second
+Layer 4: arrives at the mind fully composed, low rate
+
+Each layer compresses by ~3-5×.
+Total compression: 10 char/s → ~0.02 meaning-units/s
+```
+
+The layers give the mind TIME. While Layer 0 is still receiving
+characters, the mind has already composed what it has and is
+projecting forward. The layers are not a pipeline that feeds the
+mind — they are a hierarchy of Enkidus each providing a grace
+period for the one above. The counter we use in the SDK's Enkidu
+(hold unresolved records for one cycle before classifying as
+missing) — that grace period, scaled across layers, IS the buffer
+that lets the mind think about the future instead of drowning in
+raw input.
+
+### Bidirectional flow — the meaning engine
+
+The architecture is not unidirectional. Both pipelines run
+simultaneously:
+
+```
+UPWARD (perception):    input → Layer 0 → Layer 1 → ... → Layer N (mind)
+DOWNWARD (prediction):  Layer N (mind) → ... → Layer 1 → Layer 0 → expected input
+
+At every layer, both streams meet. The upward stream carries
+what IS arriving. The downward stream carries what SHOULD arrive.
+The difference between them is an incident: missing or reorder.
+```
+
+The mind maintains a running composition at its level — a prediction
+of what should come next semantically. This prediction propagates
+downward through the layers, decomposing at each level into
+progressively concrete expectations:
+
+- Mind predicts: "the next meaningful unit should close the current topic"
+- Layer 4 decomposes into: "a sentence about [X] is expected"
+- Layer 3 decomposes into: "noun phrase + verb phrase with these shapes"
+- Layer 2 decomposes into: specific word-level closure elements
+- Layer 1 decomposes into: morpheme sequences
+- Layer 0 decomposes into: expected characters
+
+When actual input arrives at Layer 0 and matches the downward
+prediction — no incident. The composition proceeds. When it doesn't
+match — incident at that layer, propagated upward to update the
+prediction, AND downward to update all lower expectations.
+
+This is not speculative. It is what the algebra requires. Each
+Enkidu holds a running product C. If there is a downward prediction,
+it's a TARGET product C_target. The difference is C · C_target⁻¹.
+Decompose via Hopf: if |W| > |RGB|, the prediction was missing
+something. If |RGB| > |W|, the prediction had the right elements
+in wrong order. The color channels tell you WHAT was wrong with
+the prediction, not just that it was wrong.
+
+### What the downward pipeline creates
+
+The upward pipeline discovers structure in what exists. The
+downward pipeline creates structure that doesn't exist yet. This
+is the difference between a passive monitor and a mind.
+
+When the mind projects a meaning-level target downward, it is
+creating a new compositional space. The target C⁻¹ defines a
+region on (S³)^m that the lower layers must generate into. Before
+the projection, that region had no special status. After the
+projection, it is the target — the "meaning" that the lower layers
+must realize in concrete tokens.
+
+This is the arbitrary creation of meaning spaces. A passive
+monitor receives and classifies. A mind projects and creates.
+The downward Enkidu at each level doesn't just decompose targets —
+it defines what constitutes a valid composition at the level below.
+The mind's projection propagates all the way down to Layer 0,
+where it becomes: "these specific characters, in this order."
+
+### Characters as precise geometric departures
+
+At Layer 0, every character is an incident against silence. Every
+letter departs from identity. This makes it look like characters
+are indistinguishable — all just "not silence." But on S³, each
+departure has a PRECISE direction. `a` departs identity along one
+geodesic. `b` along another. The directions are different. The
+compositions are different.
+
+The reason we can't see letter-level inverses in English is that
+letters represent phonemes, not concepts. The inverse relationships
+live at higher layers (morpheme, word, meaning). But the geometric
+information is PRESERVED through all layers. Layer 0 doesn't know
+that `h-o-t` will compose into a word whose meaning is inverse to
+`c-o-l-d`. It doesn't need to. It faithfully composes the
+characters, emits the closure element, and the inverse relationship
+emerges at Layer 5 where meaning lives.
+
+The layers are a PROTOCOL. Each level faithfully composes and emits
+using the Hamilton product and closure detection. The geometric
+structure — which characters are "close" on S³, which compositions
+nearly close, which sequences form coherent units — is transmitted
+intact from Layer 0 to Layer N. No layer needs to understand the
+content. The algebra preserves it.
+
+```
+Layer 0:  h → o → t → [emit closure element C_hot]
+Layer 0:  c → o → l → d → [emit closure element C_cold]
+...
+Layer 5:  receives C_hot and C_cold as meaning-level tokens
+          C_hot · C_cold ≈ identity    (semantic inverses)
+```
+
+The inverse relationship doesn't exist at Layer 0. It doesn't need
+to. Layer 0 transmits. The protocol preserves. Layer 5 discovers.
+
+### Generation (top-down)
 
 Classification recurses upward (input → layers → meaning).
 Generation recurses downward (meaning → layers → output).
+Both run simultaneously in a functioning mind.
 
 When Enkidu at Layer N has σ > 0:
 
