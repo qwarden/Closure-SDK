@@ -119,5 +119,20 @@
 !brahman/visual/BRAHMAN_VISUAL.md
 !brahman/visual/sweep_overhead.py
 
+# Enkidu Alive — behavioral agent
+!brahman/enkidu_alive/
+!brahman/enkidu_alive/README.md
+!brahman/enkidu_alive/ENKIDU_ALIVE.md
+!brahman/enkidu_alive/enkidu_alive.html
+!brahman/enkidu_alive/geometry.py
+!brahman/enkidu_alive/homeostasis.py
+!brahman/enkidu_alive/__init__.py
+!brahman/enkidu_alive/test_geometry.py
+!brahman/enkidu_alive/test_homeostasis.py
+!brahman/enkidu_alive/test_waypoints.py
+
+# Screenshots
+!Enkidu-alive.png
+
 # Paper
 !zeroth_law_full-1.pdf

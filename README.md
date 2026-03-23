@@ -1,5 +1,7 @@
 # Closure SDK
 
+![Enkidu Alive](Enkidu-alive.png)
+
 **Your pipeline is dropping records?** — one pass tells you which ones, how many, and if they're missing or reordered. → [SDK], [CLI]
 
 **Need your system to maintain its identity and detect any change to the bit level? Replicas drifting? Tampering protection?** — Gilgamesh composes both sequences on the sphere and classifies every discrepancy in a single walk, almost instantly, nothing passes.→ [Gilgamesh]
@@ -10,7 +12,9 @@
 
 **Your sensor fleet has a bad node and you're digging through logs?** — every sensor composes its own stream. The moment one diverges, before you pull a single log. → [Seer]
 
-**You want to build AGI? In your room?** — the geometry is S³, the architecture is an 18-step spec, steps 1-2 are validated with 1,031 parameters. Check → [Brahman]
+**You want to watch an agent forage, build shelter, and survive through pure algebra?** — zero neural network, zero learned parameters, zero training. The geometry of S³ computes attention directly: compose, measure distance from identity, act on the largest. → [Enkidu Alive](brahman/enkidu_alive/)
+
+**You want to build AGI? In your room?** — the geometry is S³, the architecture is an 18-step spec, steps 1-3b are validated with 1,031 parameters and a zero-parameter behavioral agent. Check → [Brahman](brahman/)
 
 ## What is this
 

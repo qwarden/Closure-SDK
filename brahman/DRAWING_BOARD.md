@@ -142,9 +142,10 @@ different purposes.
 
 ### Experiment 3: Minimum overhead sweep
 
-**Question:** The full S3Transformer works. Pure geometry fails. What
-is the TRUE SHAPE of a working model? Occam's razor: the simplest
-thing that works reveals the actual architecture.
+**Question:** The full S3Transformer works. Pure geometry fails for
+token generation (embedding collapse). What is the TRUE SHAPE of a
+working sequence model? Occam's razor: the simplest thing that works
+reveals the actual architecture.
 
 **Method:** Systematic ablation on BOTH tasks — grid walk (5 tokens,
 m=2) and brackets (3 tokens, m=1). Pure next-token prediction
@@ -661,15 +662,120 @@ thinking loop opened outward. The same layers, the same algebra,
 the same identity at center. The only difference: the output goes
 to another mind instead of back to the self.
 
+### Enkidu Alive — pure geometry produces behavior
+
+Experiment 1 concluded that pure geometry fails for sequence
+generation because σ alone causes embedding collapse. Enkidu Alive
+shows the other side: when the environment provides the gradient
+instead of a loss function, the geometry alone — no neural network,
+no training, no learned parameters — produces behavioral emergence.
+
+An agent lives on a grid whose positions correspond to quaternion
+compositions on S³. Home is identity. Two drives accumulate: hunger
+rises each tick, cold rises each step away from shelter. Both are
+distances from identity. The agent compares them, attends to
+whichever is larger, and takes the step that most reduces it.
+
+The reason this works is the same reason the SDK works: the Hopf
+fibration decomposes every deviation from identity into exactly two
+orthogonal axes, and those two axes are exhaustive. Hunger rising is
+a missing incident on the W axis — something the agent needs (food)
+does not exist in its current composition. Cold rising is the same
+kind of incident — shelter is missing. Navigation toward the target
+is reorder resolution on the RGB axes — the right elements exist in
+the world, the agent is in the wrong position relative to them.
+Every behavior the agent produces is a composition of these two
+incident types operating at the level of drives rather than data
+records. The algebra generalises upward because there is no third
+axis. Anything that can go wrong for a data pipeline can go wrong
+for an organism, and the geometry classifies both the same way.
+
+From this single comparison, applied tick after tick, the following
+behaviors emerge:
+
+- Foraging trips with direct return paths (the algebraic residual,
+  never retracing the outbound route)
+- Hesitation when hunger and cold are nearly equal
+- Drive switching at the crossover point
+- Rest at identity when both drives return to zero
+- Tool use: building shelter creates new fixed points along foraging
+  routes, extending survivable range (niche construction)
+- Temperament: adjusting the drive weight produces cautious agents
+  (die of hunger), balanced agents (die of cold without shelter,
+  thrive with it), and bold agents (pay a cost for risk-taking
+  even with tools)
+
+```
+Simulation results (N=2000 runs, 600 ticks, scarce environment):
+
+Temperament      No shelter    With shelter    Primary cause of death
+──────────────   ──────────    ───────────    ─────────────────────
+Cautious           49%            100%        hunger (72% of deaths)
+Balanced           49%            100%        cold (81% of deaths)
+Bold               31%             90%        cold (100% of deaths)
+
+Thriving mode: 98% survival regardless of temperament.
+```
+
+The mechanism is geometric attention: measure σ to each target, act
+on the largest. A transformer approximates this operation through
+millions of learned parameters and softmax normalisation; here the
+algebra of S³ computes it directly. It is also Friston's Free Energy
+Principle: the agent minimises surprise (distance from its expected
+state) through active inference (steps toward closure), with
+precision weighting selecting the active channel. Both frameworks
+describe the same geometric fact.
+
+This revises the Experiment 1 conclusion. Pure geometry fails for
+token-level sequence generation, where embedding collapse requires
+neural overhead to prevent. Pure geometry succeeds for behavioral
+emergence, where the environment provides the gradient that the σ
+loss could not. The Drosophila principle says each capability
+requires the ones below it; Enkidu Alive proves that the lowest
+capability — homeostatic behavior driven by closure-seeking —
+requires no learning at all.
+
+### Enkidu Alive — next skills
+
+The shelter demo proves the pattern: each new skill is a new way to
+reduce σ, composed from the same algebra, requiring no new logic.
+The next skills follow the same pattern and stack on each other the
+way biology stacks capabilities.
+
+**Food storage.** Enkidu can carry food back to shelter and eat it
+later. This is deferred hunger closure — the hunger σ reduces not at
+the food source but at home, decoupling the foraging trip from the
+consumption. The agent now has a reason to return home even when not
+cold: he has food stored there. This introduces the first compound
+behavior (forage → carry → store → eat later) from the same
+drive-comparison mechanism.
+
+**Fire.** Camps with fire reset cold faster or provide a warmth
+radius beyond the single grid cell. This is amplified cold closure —
+the shelter skill made more effective. Fire requires shelter (you
+cannot build a fire in the open), so the skill tree branches:
+shelter is prerequisite to fire, and fire makes shelter more
+powerful. The agent's survivable range extends again without any
+change to the decision logic.
+
+**Extreme mode.** Very scarce food, harsh cold. Survival requires
+both storage and fire — compound tool use. The agent must forage,
+carry food home, build shelter with fire, and manage both drives
+simultaneously. The demonstration is that complex survival strategy
+emerges from the same single comparison (which σ is largest?) applied
+to a richer action space.
+
 ### What the staircase means for implementation
 
 Each step in the staircase requires the ones below it:
 
 ```
 PROVED (local CPU):
-  1. Balance  — S3RNN on brackets            ✓  (motor, blind)
-  2. See      — S3Transformer on grid walks  ✓  (perception, spatial)
-  3. See→Walk — Transformer generation       ✓  (sensory-motor coupling)
+  1. Balance    — S3RNN on brackets            ✓  (motor, blind)
+  2. See        — S3Transformer on grid walks  ✓  (perception, spatial)
+  3. See→Walk   — Transformer generation       ✓  (sensory-motor coupling)
+  3b. Alive     — Enkidu Alive, pure geometry  ✓  (homeostasis, tool use,
+                                                   behavioral emergence)
 
 NOT YET BUILT:
   4. Meaning→See  — downward pipeline, goal-directed targets
@@ -677,9 +783,11 @@ NOT YET BUILT:
   6. Speak        — same loop, open to external output (language)
 ```
 
-Steps 1-3 are proved. Steps 4-6 are the recursive Enkidu
-architecture — the layers described above, running bidirectionally,
-with the mind at center.
+Steps 1-3 are proved. Step 3b (Enkidu Alive) is a lateral proof
+that sits alongside Step 3: it demonstrates that the geometric core
+alone produces behavior when an environment supplies the gradient.
+Steps 4-6 are the recursive Enkidu architecture — the layers
+described above, running bidirectionally, with the mind at center.
 
 The character-level language model (TinyStories) is Step 6. But you
 can't jump to Step 6 without Steps 4 and 5. A language model that
@@ -715,7 +823,7 @@ across 5-10 sentence-level closure elements.
 
 ### Anti-collapse through the hierarchy
 
-The Drawing Board's S3Pure failed: σ alone lets embeddings collapse
+For token generation, S3Pure's σ-only loss lets embeddings collapse
 to identity. Cross-entropy prevents this in flat models.
 
 The recursion provides its own anti-collapse: if Layer 0 embeddings

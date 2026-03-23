@@ -153,7 +153,9 @@ Generation:           FAIL — deterministic: 0%, temp=0.3: 16%
                       Always generates ((· — stuck in local minimum.
 ```
 
-12 parameters with σ_final alone cannot discover inverses.
+12 parameters with σ_final alone cannot discover token-level inverses
+(but see Step 3b: σ alone suffices for behavioral emergence when the
+environment provides the gradient).
 
 **Follow-up: per-step σ (dense signal) — also fails, and reveals why.**
 
@@ -187,7 +189,8 @@ Cross-entropy prevents the degenerate collapse. σ provides the geometric target
 
 **Synthesis — what the grid walk + Drawing Board experiments prove:**
 
-The geometry is necessary but not sufficient for LEARNING. Two signals are needed:
+The geometry is necessary but not sufficient for learning token-level
+sequence generation. Two signals are needed:
 
 | Signal | Role | What happens without it |
 |---|---|---|
@@ -198,6 +201,35 @@ The geometry is necessary but not sufficient for LEARNING. Two signals are neede
 For detection/monitoring, σ alone works (t=69.73 on grid walks, t=83.32 on brackets). For generation, cross-entropy alone works (98.3% closed walks, 94.3% valid brackets). For LEARNING the geometric structure (discovering inverses), both are needed together.
 
 The architecture going forward: **train with cross-entropy for generation, use σ as a free diagnostic channel, and rely on their combination to learn compositional structure.**
+
+**Step 3b — PASSED.** Enkidu Alive — behavioral emergence from pure geometry.
+
+The Drawing Board concluded that pure geometry (σ alone, no neural overhead) fails. That conclusion was too narrow. What fails is *token-level generation* without neural overhead — the embedding collapse problem. What succeeds, and what Enkidu Alive demonstrates, is *behavioral emergence* when the environment provides the gradient instead of a loss function.
+
+Enkidu Alive places an agent on a grid whose positions correspond to quaternion compositions on S³. Home is the identity element. Two scalar drives accumulate each tick: hunger rises with time, cold rises with distance from shelter. Both are distances from identity. The agent compares the two and takes the step that most reduces whichever is larger. From this single rule, with zero learned parameters, the following behaviors emerge:
+
+- Foraging trips with direct return paths (the algebraic residual, never retracing)
+- Hesitation at the drive crossover point
+- Drive switching between food-seeking and shelter-seeking
+- Rest at identity when both drives reach zero
+- Tool use: the agent can be taught to build shelter, creating new fixed points (new identity targets) that extend its survivable range — niche construction
+- Temperament: weighting the drive comparison produces cautious agents (die of hunger), balanced agents (die of cold without shelter, thrive with it), and bold agents (pay a 10% mortality cost for risk-taking even with tools)
+
+```
+Simulation results (N=2000 runs, 600 ticks, scarce environment):
+
+Temperament      No shelter    With shelter    Primary cause of death
+──────────────   ──────────    ───────────    ─────────────────────
+Cautious           49%            100%        hunger (72% of deaths)
+Balanced           49%            100%        cold (81% of deaths)
+Bold               31%             90%        cold (100% of deaths)
+
+Thriving mode: 98% survival regardless of temperament.
+```
+
+The mechanism is simultaneously geometric attention (measure σ to each target, attend to the largest — the same operation a transformer approximates with learned weight matrices) and Friston's Free Energy Principle (minimise surprise through active inference, with precision weighting selecting the active channel). The generative model is the algebra itself. The gradient comes from the environment disturbing equilibrium, not from a loss function.
+
+This revises the architecture's foundation. The lowest level of the developmental staircase — homeostatic behavior, closure-seeking, tool use — requires no learning at all. The geometry alone is sufficient when the world provides the gradient. Neural overhead becomes necessary at higher levels, where the agent must *generate token sequences* rather than *select actions from a fixed repertoire*.
 
 Next: Character-level language — see "Experimental: Character-Level S³" below.
 
@@ -932,7 +964,7 @@ COMPETITIVE (GPU cluster)
   13. The number: S³ model vs 124M GPT-2
 ```
 
-Step 5 is the critical path. Step 4 answered the Drawing Board question: pure geometry alone can't discover inverses at minimal scale — the optimizer needs neural paths (a small network) and a strong signal (cross-entropy). The architecture going forward uses the S3Transformer with cross-entropy for generation, σ as a free diagnostic channel. They're complementary. Step 5 tests this on language.
+Step 5 is the critical path. Step 4 answered the Drawing Board question for token generation: σ loss alone causes embedding collapse, so the optimizer needs neural paths (a small network) and cross-entropy to keep embeddings distinct. Step 3b (Enkidu Alive) showed the other side: when the environment provides the gradient instead of a loss function, pure geometry produces behavioral emergence with no neural overhead at all. The architecture going forward uses the S3Transformer with cross-entropy for sequence generation, σ as a free diagnostic channel, and recognises that the lowest level of the staircase (homeostatic behavior) needs no learning. Step 5 tests the sequence generation path on language.
 
 ### Success criteria (character-level, binary)
 
@@ -1060,7 +1092,7 @@ Train across configurations on the same corpus. Measure perplexity, σ-coherence
 | 2 (channels) | W and RGB separate missing-type vs ordering-type errors | Channels are noise |
 | 3 (external loop) | External feedback extends coherent generation length vs Step 2 | No improvement |
 | 3b (grid walk) | **PASSED (generation)** — 98.3% closed walks. **Key insight:** neural overhead bypasses geometry | ~~Geometry drives generation~~ |
-| 4 (pure geometry) | ~~Drawing Board model discovers inverses from σ alone~~ | **ANSWERED** — geometry needs neural optimization paths; σ alone insufficient at minimal scale |
+| 4 (pure geometry) | ~~Drawing Board model discovers inverses from σ alone~~ | **ANSWERED** — for token generation, σ alone causes embedding collapse; neural paths needed. For behavioral emergence (Enkidu Alive), σ alone suffices when the environment provides the gradient |
 | 5 (persistence) | Full loop runs: generate → persist → observe → feedback → adjust | Breaks |
 | Language (perplexity) | Within 2× of same-size transformer | Worse by > 2× |
 | Language (coherence) | σ correlates with human-judged coherence (r > 0.3) | No correlation |
