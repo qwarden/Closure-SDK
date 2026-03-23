@@ -250,6 +250,7 @@ This is a building block — you embed it in the systems you already run. If you
 | `brahman/` | What happens when you teach a neural network to compose on S³ instead of ℝⁿ. Start here if you're curious where this goes next |
 | `CLOSURE_SDK.md` | Full technical documentation — theory, architecture, complete API reference |
 | `CLOSURE_CLI.md` | CLI documentation — all three commands, options, output formats, architecture |
+| `zeroth_law_full-1.pdf` | The paper — [Zenodo](https://zenodo.org/records/19140055) |
 
 ## Architecture
 
@@ -280,7 +281,7 @@ Two proven properties underpin everything:
 
 **Uniform detectability** — every position in the sequence is equally sensitive. There are no blind spots — the first record and the millionth are equally visible.
 
-These are theorems, not heuristics. Full proofs are in `CLOSURE_SDK.md`.
+These are theorems, not heuristics. Full proofs are in `CLOSURE_SDK.md`. The foundational paper is [on Zenodo](https://zenodo.org/records/19140055).
 
 ## Tests
 
