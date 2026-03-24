@@ -118,6 +118,7 @@
 !brahman/visual/__init__.py
 !brahman/visual/BRAHMAN_VISUAL.md
 !brahman/visual/sweep_overhead.py
+!brahman/two_enkidu_brackets.py
 
 # Enkidu Alive — behavioral agent
 !brahman/enkidu_alive/

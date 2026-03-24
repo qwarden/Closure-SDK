@@ -231,6 +231,34 @@ The mechanism is simultaneously geometric attention (measure σ to each target, 
 
 This revises the architecture's foundation. The lowest level of the developmental staircase — homeostatic behavior, closure-seeking, tool use — requires no learning at all. The geometry alone is sufficient when the world provides the gradient. Neural overhead becomes necessary at higher levels, where the agent must *generate token sequences* rather than *select actions from a fixed repertoire*.
 
+**Step 4 — PASSED.** Two stacked Enkidus — zero-parameter nested bracket generation.
+
+The Enkidu Alive principle (competing drives from geometry alone) extends to sequence generation when two levels cooperate. The architecture:
+
+- **Level 0 (the ear):** composes bracket tokens on a single S³ using non-commutative axes (each type on a different axis: `(` on x, `[` on y, `{` on z). Measures σ_closure. Emits events upward.
+- **Level 1 (the mind):** receives events from Level 0, maintains a temporal record of pending openers as composition-history fingerprints. Predicts which closer comes next by reading the most recent opener.
+- **Bridge (the zero):** carries σ_closure upward, Level 1's prediction downward.
+- **Drives:** σ_expression (hunger — open new brackets) vs σ_closure (cold — close toward identity). Decision: max(σ_expression, σ_closure).
+
+The critical finding: single-step σ-reduction on Level 0 alone predicts the correct next closer only 52% of the time (the scalar is ambiguous about ordering when multiple types are open). But Level 0's quaternion does encode the ordering — different open-orders produce different quaternions (100% distinctness). Level 1 provides the temporal decoder that Level 0's scalar cannot.
+
+```
+Results (2000 generated sequences):
+
+Prediction accuracy:   100% (pure opens, partial close, full decomposition)
+Generation validity:   100% (2000/2000)
+Average depth:         3.2, max 7
+Multi-type nesting:    92% use 2+ bracket types
+σ separation:          100% (valid vs corrupted)
+Learned parameters:    0 (two geometric params: θ₀ = π/4, θ₁ = π/6)
+```
+
+Example output: `[({{()}()})][]`, `({[()()]}){}`, `{([[([])][]])}{}`.
+
+This validates the recursive architecture from the Drawing Board: the developmental staircase works, two levels cooperate through a bridge, and drive competition produces generation rhythm. For formal languages, the geometry is the computation. For natural language, Level 0 will need learned embeddings (characters are not algebraic inverses), but the architecture — stacked Enkidus, bridge protocol, drive competition — carries forward.
+
+Code: `brahman/two_enkidu_brackets.py`
+
 Next: Character-level language — see "Experimental: Character-Level S³" below.
 
 ## What exists (do not rebuild)
