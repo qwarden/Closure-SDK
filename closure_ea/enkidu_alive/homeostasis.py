@@ -1,17 +1,71 @@
 """Homeostasis — competing drives select which target Enkidu walks toward.
 
 Two drives, same function. Hunger rises with time. Coldness rises
-with distance from home (σ). Whichever is higher picks the target.
-That's the entire decision layer.
-
-No if-statements choosing behavior. The max() IS the decision.
+with distance from home (σ). Each drive is tracked as a live stream
+against identity using the SDK's Enkidu classifier. Whichever open
+drive is larger picks the target.
 """
 
 import random
+import sys
+from pathlib import Path
 from geometry import EnkiduState, hopf_decompose
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from closure_sdk.canon import Enkidu as StreamEnkidu
 
 
 HUNGER_LETHAL = 3.14  # π — max hunger before death
+
+
+class DriveChannel:
+    """One internal drive tracked by the SDK Enkidu stream classifier.
+
+    `source` means the drive is active (away from identity).
+    `target` means the drive resolved back to identity.
+    """
+
+    def __init__(self, label: str):
+        self.label = label.encode()
+        self.detector = StreamEnkidu()
+        self._active = False
+        self.last_incidents = []
+
+    def observe(self, active_now: bool, tick: int) -> bool:
+        incidents = []
+        if active_now != self._active:
+            side = "source" if active_now else "target"
+            report = self.detector.ingest(self.label, tick, side)
+            if report is not None:
+                incidents.append(report)
+            self._active = active_now
+        incidents.extend(self.detector.advance_cycle())
+        self.last_incidents = incidents
+        return self.away_from_identity
+
+    @property
+    def away_from_identity(self) -> bool:
+        return self.detector.unresolved_source > 0
+
+    def snapshot(self) -> dict:
+        return {
+            "away": self.away_from_identity,
+            "cycle": self.detector.cycle,
+            "unresolved_source": self.detector.unresolved_source,
+            "unresolved_target": self.detector.unresolved_target,
+            "reclassified": self.detector.reclassified_count,
+            "incidents": [
+                {
+                    "type": inc.incident_type,
+                    "source_index": inc.source_index,
+                    "target_index": inc.target_index,
+                }
+                for inc in self.last_incidents
+            ],
+        }
 
 
 class World:
@@ -27,6 +81,8 @@ class World:
 
         # Drives — both start at 0 (homeostasis)
         self.hunger = 0.0
+        self._hunger_channel = DriveChannel("hunger")
+        self._cold_channel = DriveChannel("cold")
 
         # State
         self.alive = True
@@ -45,10 +101,12 @@ class World:
 
     @property
     def active_drive(self):
-        """Which drive is dominant right now?"""
-        if self.hunger > self.coldness and self.food:
+        """Which open drive is dominant right now?"""
+        hunger_open = self._hunger_channel.away_from_identity and bool(self.food)
+        cold_open = self._cold_channel.away_from_identity
+        if hunger_open and (not cold_open or self.hunger > self.coldness):
             return "hunger"
-        elif self.coldness > 0.01:
+        elif cold_open:
             return "shelter"
         else:
             return "rest"
@@ -91,6 +149,12 @@ class World:
         # Hunger rises
         self.hunger = min(self.hunger + self.hunger_rate, HUNGER_LETHAL)
 
+        # Classify the live drive streams against identity.
+        hunger_active = self.hunger > 0.0 and bool(self.food)
+        cold_active = self.coldness > 0.01
+        self._hunger_channel.observe(hunger_active, self.tick_count)
+        self._cold_channel.observe(cold_active, self.tick_count)
+
         # Death check
         died = self.hunger >= HUNGER_LETHAL
         if died:
@@ -129,6 +193,10 @@ class World:
             "alive": self.alive,
             "food": list(self.food),
             "hopf": self.enkidu.hopf(),
+            "drive_channels": {
+                "hunger": self._hunger_channel.snapshot(),
+                "cold": self._cold_channel.snapshot(),
+            },
         }
         self.trace.append(snap)
         return snap

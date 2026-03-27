@@ -102,35 +102,57 @@ closure_rs/*.so
 !data/walmart_a_100.jsonl
 !data/walmart_b_100.jsonl
 
-# Brahman — S³ Transformer
-!brahman/
-!brahman/__init__.py
-!brahman/__main__.py
-!brahman/model.py
-!brahman/data.py
-!brahman/train.py
-!brahman/BRAHMAN.md
-!brahman/DRAWING_BOARD.md
-!brahman/train_pure.py
-!brahman/visual/
-!brahman/visual/data.py
-!brahman/visual/train.py
-!brahman/visual/__init__.py
-!brahman/visual/BRAHMAN_VISUAL.md
-!brahman/visual/sweep_overhead.py
-!brahman/two_enkidu_brackets.py
+# Closure Ea — recursive closure layer
+!closure_ea/
+!closure_ea/__init__.py
+!closure_ea/__main__.py
+!closure_ea/README.md
+!closure_ea/CLOSURE_EA_REFACTOR_IMPLEMENTATION.md
+!closure_ea/EA_STRICT_THEORY_REFACTOR.md
+!closure_ea/kernel.py
+!closure_ea/cell.py
+!closure_ea/lattice.py
+!closure_ea/trinity.py
+!closure_ea/genome.py
 
-# Enkidu Alive — behavioral agent
-!brahman/enkidu_alive/
-!brahman/enkidu_alive/README.md
-!brahman/enkidu_alive/ENKIDU_ALIVE.md
-!brahman/enkidu_alive/enkidu_alive.html
-!brahman/enkidu_alive/geometry.py
-!brahman/enkidu_alive/homeostasis.py
-!brahman/enkidu_alive/__init__.py
-!brahman/enkidu_alive/test_geometry.py
-!brahman/enkidu_alive/test_homeostasis.py
-!brahman/enkidu_alive/test_waypoints.py
+# Enkidu Alive demo
+!closure_ea/enkidu_alive/
+!closure_ea/enkidu_alive/README.md
+!closure_ea/enkidu_alive/ENKIDU_ALIVE.md
+!closure_ea/enkidu_alive/enkidu_alive.html
+!closure_ea/enkidu_alive/enkidu_alive_sdk.html
+!closure_ea/enkidu_alive/geometry.py
+!closure_ea/enkidu_alive/grounded_vocab.py
+!closure_ea/enkidu_alive/homeostasis.py
+!closure_ea/enkidu_alive/__init__.py
+!closure_ea/enkidu_alive/test_geometry.py
+!closure_ea/enkidu_alive/test_homeostasis.py
+!closure_ea/enkidu_alive/test_waypoints.py
+
+# Music track — active files only
+!closure_ea/tracks/
+!closure_ea/tracks/__init__.py
+!closure_ea/tracks/music/
+!closure_ea/tracks/music/README.md
+!closure_ea/tracks/music/DATASETS.md
+!closure_ea/tracks/music/GILGAMESH_KNOWS_MUSIC.md
+!closure_ea/tracks/music/music.py
+!closure_ea/tracks/music/bach_generic.py
+!closure_ea/tracks/music/song_viewer_template.html
+
+# Walking track
+!closure_ea/tracks/walking/
+!closure_ea/tracks/walking/__init__.py
+!closure_ea/tracks/walking/WALKING.md
+!closure_ea/tracks/walking/walking_adapter.py
+!closure_ea/tracks/walking/body.py
+!closure_ea/tracks/walking/enkidu3d.py
+!closure_ea/tracks/walking/biped.py
+!closure_ea/tracks/walking/biped.urdf
+!closure_ea/tracks/walking/learn_to_walk.py
+!closure_ea/tracks/walking/learn_stairs.py
+!closure_ea/tracks/walking/phase1_stand.py
+!closure_ea/tracks/walking/watch_stand.py
 
 # GitHub Pages
 !docs/

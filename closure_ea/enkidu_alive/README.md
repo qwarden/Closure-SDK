@@ -19,14 +19,21 @@ distances fall to zero. When taught to build shelter, Enkidu creates
 new fixed points along his routes — niche construction — extending
 his survivable range without any change to the underlying logic.
 
-The mechanism is geometric attention: measure σ to each target, act
-on the largest. It is also Friston's Free Energy Principle: minimise
-surprise through active inference, with precision weighting selecting
-the active channel. The algebra computes both directly.
+The mechanism is geometric attention plus stream classification:
+each drive is tracked against identity by the SDK's `Enkidu` class,
+and Enkidu acts on whichever open drive is larger. It is also
+Friston's Free Energy Principle: minimise surprise through active
+inference, with precision weighting selecting the active channel.
+The algebra computes both directly.
 
 ## Running the demo
 
 Open `enkidu_alive.html` in any browser. No server, no dependencies.
+
+The Python `World` implementation now uses the SDK's `Enkidu` class to
+track hunger and cold as live streams against identity. The standalone
+HTML file remains a browser-side mirror of the same behavior; it does
+not directly import the Python SDK class.
 
 **Controls:**
 - **Click** the grid to drop food
@@ -89,11 +96,10 @@ and fire to survive — compound tool use emerging from the same algebra.
 
 ## Connection to the SDK
 
-The Closure SDK's Enkidu class composes two streams, checks if they
-close to identity, and classifies the residual as missing (W axis) or
-reorder (RGB axis). This grid agent does the same thing: it composes
-steps, checks distance from identity (σ), and the residual drives its
-next move. The detector and the actor are the same operation.
+The Closure SDK's `Enkidu` class watches two live streams and marks
+what has moved away from identity. In this grid agent, hunger and cold
+are each tracked as live drive streams against identity by that class.
+The geometry then turns the open drive into a target and a step.
 
 See [DRAWING_BOARD.md](../DRAWING_BOARD.md) for the full experimental
 record and [BRAHMAN.md](../BRAHMAN.md) for the architecture spec.

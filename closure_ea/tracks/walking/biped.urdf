@@ -1,0 +1,205 @@
+<?xml version="1.0" ?>
+<robot name="simple_biped">
+
+  <!-- Torso (base link) -->
+  <link name="torso">
+    <inertial>
+      <mass value="10.0"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="0.1" ixy="0" ixz="0" iyy="0.1" iyz="0" izz="0.05"/>
+    </inertial>
+    <collision>
+      <geometry><box size="0.30 0.20 0.50"/></geometry>
+    </collision>
+    <visual>
+      <geometry><box size="0.30 0.20 0.50"/></geometry>
+      <material name="blue"><color rgba="0.3 0.5 0.8 1"/></material>
+    </visual>
+  </link>
+
+  <!-- LEFT LEG -->
+
+  <!-- Left hip abduction (lateral stability) -->
+  <link name="left_hip_ab_link">
+    <inertial>
+      <mass value="0.1"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001"/>
+    </inertial>
+  </link>
+
+  <joint name="left_hip_ab" type="revolute">
+    <parent link="torso"/>
+    <child link="left_hip_ab_link"/>
+    <origin xyz="0.105 0 -0.25" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-0.5" upper="0.5" effort="60" velocity="3"/>
+    <dynamics damping="1.0"/>
+  </joint>
+
+  <link name="left_upper_leg">
+    <inertial>
+      <mass value="2.0"/>
+      <origin xyz="0 0 -0.175"/>
+      <inertia ixx="0.02" ixy="0" ixz="0" iyy="0.02" iyz="0" izz="0.002"/>
+    </inertial>
+    <collision>
+      <origin xyz="0 0 -0.175"/>
+      <geometry><cylinder radius="0.04" length="0.35"/></geometry>
+    </collision>
+    <visual>
+      <origin xyz="0 0 -0.175"/>
+      <geometry><cylinder radius="0.04" length="0.35"/></geometry>
+      <material name="gray"><color rgba="0.6 0.6 0.6 1"/></material>
+    </visual>
+  </link>
+
+  <joint name="left_hip" type="revolute">
+    <parent link="left_hip_ab_link"/>
+    <child link="left_upper_leg"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <axis xyz="1 0 0"/>
+    <limit lower="-1.2" upper="1.2" effort="100" velocity="5"/>
+    <dynamics damping="0.5"/>
+  </joint>
+
+  <link name="left_lower_leg">
+    <inertial>
+      <mass value="1.5"/>
+      <origin xyz="0 0 -0.175"/>
+      <inertia ixx="0.015" ixy="0" ixz="0" iyy="0.015" iyz="0" izz="0.001"/>
+    </inertial>
+    <collision>
+      <origin xyz="0 0 -0.175"/>
+      <geometry><cylinder radius="0.035" length="0.35"/></geometry>
+    </collision>
+    <visual>
+      <origin xyz="0 0 -0.175"/>
+      <geometry><cylinder radius="0.035" length="0.35"/></geometry>
+      <material name="darkgray"><color rgba="0.5 0.5 0.5 1"/></material>
+    </visual>
+  </link>
+
+  <joint name="left_knee" type="revolute">
+    <parent link="left_upper_leg"/>
+    <child link="left_lower_leg"/>
+    <origin xyz="0 0 -0.35" rpy="0 0 0"/>
+    <axis xyz="1 0 0"/>
+    <limit lower="-0.05" upper="2.2" effort="80" velocity="5"/>
+    <dynamics damping="0.3"/>
+  </joint>
+
+  <link name="left_foot">
+    <inertial>
+      <mass value="0.5"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001"/>
+    </inertial>
+    <collision>
+      <geometry><box size="0.24 0.14 0.04"/></geometry>
+    </collision>
+    <visual>
+      <geometry><box size="0.24 0.14 0.04"/></geometry>
+      <material name="brown"><color rgba="0.4 0.3 0.2 1"/></material>
+    </visual>
+  </link>
+
+  <joint name="left_ankle" type="fixed">
+    <parent link="left_lower_leg"/>
+    <child link="left_foot"/>
+    <origin xyz="0 0 -0.35" rpy="0 0 0"/>
+  </joint>
+
+  <!-- RIGHT LEG -->
+
+  <link name="right_hip_ab_link">
+    <inertial>
+      <mass value="0.1"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001"/>
+    </inertial>
+  </link>
+
+  <joint name="right_hip_ab" type="revolute">
+    <parent link="torso"/>
+    <child link="right_hip_ab_link"/>
+    <origin xyz="-0.105 0 -0.25" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-0.5" upper="0.5" effort="60" velocity="3"/>
+    <dynamics damping="1.0"/>
+  </joint>
+
+  <link name="right_upper_leg">
+    <inertial>
+      <mass value="2.0"/>
+      <origin xyz="0 0 -0.175"/>
+      <inertia ixx="0.02" ixy="0" ixz="0" iyy="0.02" iyz="0" izz="0.002"/>
+    </inertial>
+    <collision>
+      <origin xyz="0 0 -0.175"/>
+      <geometry><cylinder radius="0.04" length="0.35"/></geometry>
+    </collision>
+    <visual>
+      <origin xyz="0 0 -0.175"/>
+      <geometry><cylinder radius="0.04" length="0.35"/></geometry>
+      <material name="gray"/>
+    </visual>
+  </link>
+
+  <joint name="right_hip" type="revolute">
+    <parent link="right_hip_ab_link"/>
+    <child link="right_upper_leg"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <axis xyz="1 0 0"/>
+    <limit lower="-1.2" upper="1.2" effort="100" velocity="5"/>
+    <dynamics damping="0.5"/>
+  </joint>
+
+  <link name="right_lower_leg">
+    <inertial>
+      <mass value="1.5"/>
+      <origin xyz="0 0 -0.175"/>
+      <inertia ixx="0.015" ixy="0" ixz="0" iyy="0.015" iyz="0" izz="0.001"/>
+    </inertial>
+    <collision>
+      <origin xyz="0 0 -0.175"/>
+      <geometry><cylinder radius="0.035" length="0.35"/></geometry>
+    </collision>
+    <visual>
+      <origin xyz="0 0 -0.175"/>
+      <geometry><cylinder radius="0.035" length="0.35"/></geometry>
+      <material name="darkgray"/>
+    </visual>
+  </link>
+
+  <joint name="right_knee" type="revolute">
+    <parent link="right_upper_leg"/>
+    <child link="right_lower_leg"/>
+    <origin xyz="0 0 -0.35" rpy="0 0 0"/>
+    <axis xyz="1 0 0"/>
+    <limit lower="-0.05" upper="2.2" effort="80" velocity="5"/>
+    <dynamics damping="0.3"/>
+  </joint>
+
+  <link name="right_foot">
+    <inertial>
+      <mass value="0.5"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001"/>
+    </inertial>
+    <collision>
+      <geometry><box size="0.24 0.14 0.04"/></geometry>
+    </collision>
+    <visual>
+      <geometry><box size="0.24 0.14 0.04"/></geometry>
+      <material name="brown"/>
+    </visual>
+  </link>
+
+  <joint name="right_ankle" type="fixed">
+    <parent link="right_lower_leg"/>
+    <child link="right_foot"/>
+    <origin xyz="0 0 -0.35" rpy="0 0 0"/>
+  </joint>
+
+</robot>

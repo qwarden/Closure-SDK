@@ -1,3 +1,6 @@
+
+######NEW MODULE CURRENTLY A WORK IN PROGRESS ---
+
 # Closure SDK
 
 ![Enkidu Alive](Enkidu-alive.png)
@@ -12,9 +15,9 @@
 
 **Your sensor fleet has a bad node and you're digging through logs?** — every sensor composes its own stream. The moment one diverges, before you pull a single log. → [Seer]
 
-**You want to watch an agent forage, build shelter, and survive through pure algebra?** — zero neural network, zero learned parameters, zero training. The geometry of S³ computes attention directly: compose, measure distance from identity, act on the largest. → [**Try it live**](https://faltz009.github.io/Closure-SDK/) | [Source](brahman/enkidu_alive/)
+**You want to watch an agent forage, build shelter, and survive through pure algebra?** — zero neural network, zero learned parameters, zero training. The geometry of S³ computes attention directly: compose, measure distance from identity, act on the largest. → [**Try it live**](https://faltz009.github.io/Closure-SDK/) | [Source](closure_ea/enkidu_alive/)
 
-**You want to build AGI? In your room?** — the geometry is S³, the architecture is an 18-step spec, steps 1-3b are validated with 1,031 parameters and a zero-parameter behavioral agent. Check → [Brahman](brahman/)
+**You want to build AGI? In your room?** — the geometry is S³, the architecture is an 18-step spec, steps 1-3b are validated with 1,031 parameters and a zero-parameter behavioral agent. Check → [Closure Ea](closure_ea/)
 
 ## What is this
 
@@ -255,7 +258,7 @@ This is a building block — you embed it in the systems you already run. If you
 | `tests/` | 207 tests — SDK algebra, convergence, streaming, binding, CLI integration |
 | `benchmarks/` | Head-to-head against SHA-256, hash chains, and Merkle trees |
 | `examples/` | Worked examples: drift detection, incident classification, streaming, binding, channels |
-| `brahman/` | What happens when you teach a neural network to compose on S³ instead of ℝⁿ. Start here if you're curious where this goes next |
+| `closure_ea/` | What happens when you teach a neural network to compose on S³ instead of ℝⁿ. Start here if you're curious where this goes next |
 | `CLOSURE_SDK.md` | Full technical documentation — theory, architecture, complete API reference |
 | `CLOSURE_CLI.md` | CLI documentation — all three commands, options, output formats, architecture |
 | `zeroth_law_full-1.pdf` | The paper — [Zenodo](https://zenodo.org/records/19140055) |

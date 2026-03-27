@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S³ Song Viewer</title>
+<style>
+  :root {
+    --bg: #0a1016;
+    --panel: #121922;
+    --panel-2: #0d141c;
+    --ink: #ebe2d3;
+    --muted: #8ea0ae;
+    --accent: #ddb35c;
+    --slice: #73beff;
+    --bar: #e58858;
+    --segment: #8fdb68;
+    --piece: #f6d77b;
+    --grid: rgba(255,255,255,0.045);
+    --path: rgba(197, 224, 255, 0.30);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: Georgia, "Times New Roman", serif;
+    background:
+      radial-gradient(circle at 18% 14%, rgba(221,179,92,0.10), transparent 22%),
+      radial-gradient(circle at 82% 18%, rgba(115,190,255,0.07), transparent 26%),
+      radial-gradient(circle at 70% 78%, rgba(143,219,104,0.05), transparent 26%),
+      linear-gradient(160deg, #081019 0%, var(--bg) 58%, #121821 100%);
+    color: var(--ink);
+  }
+  .wrap {
+    display: grid;
+    grid-template-columns: minmax(320px, 420px) 1fr;
+    min-height: 100vh;
+  }
+  .sidebar {
+    background: linear-gradient(180deg, rgba(19,28,36,0.98), rgba(15,22,29,0.95));
+    border-right: 1px solid rgba(255,255,255,0.08);
+    padding: 24px 22px;
+    overflow: auto;
+  }
+  .viewer {
+    position: relative;
+    min-height: 100vh;
+    padding: 18px;
+  }
+  h1 {
+    margin: 0 0 6px;
+    font-size: 30px;
+    line-height: 1.1;
+    color: var(--accent);
+    letter-spacing: 0.02em;
+  }
+  .sub {
+    color: var(--muted);
+    font-size: 14px;
+    margin-bottom: 18px;
+  }
+  .block {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 14px;
+    padding: 14px 16px;
+    margin-bottom: 14px;
+  }
+  .block h2 {
+    margin: 0 0 8px;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+  }
+  .metrics {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px 14px;
+    font-size: 14px;
+  }
+  .metric-label { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; }
+  .metric-value { font-size: 18px; margin-top: 2px; }
+  .legend {
+    display: grid;
+    gap: 8px;
+    font-size: 14px;
+  }
+  .legend-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .swatch {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    box-shadow: 0 0 10px currentColor;
+  }
+  .small {
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .controls {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+  }
+  .loader {
+    display: grid;
+    gap: 10px;
+  }
+  .loader input[type="file"] {
+    width: 100%;
+    color: var(--muted);
+    font: inherit;
+  }
+  .hint {
+    font-size: 12px;
+    color: var(--muted);
+  }
+  button {
+    font: inherit;
+    color: var(--ink);
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.10);
+    padding: 8px 12px;
+    border-radius: 999px;
+    cursor: pointer;
+  }
+  button.active {
+    background: rgba(212,170,80,0.14);
+    border-color: rgba(212,170,80,0.6);
+    color: #ffe7b0;
+  }
+  canvas {
+    width: 100%;
+    height: calc(100vh - 36px);
+    display: block;
+    background:
+      radial-gradient(circle at center, rgba(255,255,255,0.018), transparent 60%),
+      radial-gradient(circle at center, rgba(115,190,255,0.035), transparent 34%),
+      linear-gradient(180deg, rgba(255,255,255,0.015), rgba(255,255,255,0.00));
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 20px;
+    box-shadow: inset 0 0 80px rgba(0,0,0,0.22);
+  }
+  .status {
+    position: absolute;
+    left: 34px;
+    bottom: 34px;
+    max-width: 520px;
+    background: rgba(10,15,20,0.86);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 16px;
+    padding: 14px 16px;
+    backdrop-filter: blur(12px);
+  }
+  .status h3 {
+    margin: 0 0 8px;
+    color: var(--accent);
+    font-size: 15px;
+  }
+  .status pre {
+    margin: 0;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    white-space: pre-wrap;
+    color: var(--ink);
+    font-size: 12px;
+    line-height: 1.5;
+  }
+  @media (max-width: 980px) {
+    .wrap { grid-template-columns: 1fr; }
+    .viewer { min-height: 60vh; }
+    canvas { height: 62vh; }
+    .status { position: static; margin-top: 12px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <aside class="sidebar">
+    <h1>S³ Song Viewer</h1>
+    <div class="sub">A piece as nested layers: slices inside bars, bars inside segments, segments inside the whole piece.</div>
+
+    <div class="block">
+      <h2>Load Song</h2>
+      <div class="loader">
+        <input id="file-input" type="file" accept=".json,application/json">
+        <div class="small">Supports exported hierarchy JSON. Drag and drop also works.</div>
+        <div class="hint" id="load-status">Using embedded song data.</div>
+      </div>
+    </div>
+
+    <div class="block">
+      <h2>Piece</h2>
+      <div class="metrics">
+        <div><div class="metric-label">Title</div><div class="metric-value" id="meta-title"></div></div>
+        <div><div class="metric-label">Voices</div><div class="metric-value" id="meta-voices"></div></div>
+        <div style="grid-column: 1 / span 2;"><div class="metric-label">Subtitle</div><div class="metric-value" id="meta-subtitle" style="font-size:15px;"></div></div>
+        <div><div class="metric-label">Slices</div><div class="metric-value" id="meta-slices"></div></div>
+        <div><div class="metric-label">Bars</div><div class="metric-value" id="meta-bars"></div></div>
+        <div><div class="metric-label">Segments</div><div class="metric-value" id="meta-segments"></div></div>
+        <div><div class="metric-label">L1 ε</div><div class="metric-value" id="meta-eps"></div></div>
+      </div>
+    </div>
+
+    <div class="block">
+      <h2>Layers</h2>
+      <div class="legend">
+        <div class="legend-row"><span class="swatch" style="background: var(--slice); color: var(--slice)"></span> Raw slice path</div>
+        <div class="legend-row"><span class="swatch" style="background: var(--bar); color: var(--bar)"></span> Bar identities</div>
+        <div class="legend-row"><span class="swatch" style="background: var(--segment); color: var(--segment)"></span> Segment identities</div>
+        <div class="legend-row"><span class="swatch" style="background: var(--piece); color: var(--piece)"></span> Piece identity</div>
+      </div>
+      <p class="small" style="margin-top:10px;">
+        This view is laid out by containment and order first, not by free geometry. The angle shows where something sits in the song.
+        The color intensity and labels still come from the quaternion data.
+      </p>
+    </div>
+
+    <div class="block">
+      <h2>View</h2>
+      <div class="controls">
+        <button data-layer="raw" class="active">Raw Path</button>
+        <button data-layer="bars" class="active">Bars</button>
+        <button data-layer="segments" class="active">Segments</button>
+        <button data-layer="piece" class="active">Piece</button>
+      </div>
+      <div class="small">
+        This is an onion view, not a star map. The outer ring is the raw stream. Bars wrap that stream.
+        Segments wrap the bars. The piece is the center identity that holds them all.
+      </div>
+    </div>
+
+    <div class="block">
+      <h2>Interpretation</h2>
+      <div class="small">
+        The adapter gives the cuts. The lattice gives the identities.
+        The raw ring shows time. The bar ring shows emitted bar objects.
+        The segment ring shows the higher closures. The center is the whole-piece identity.
+      </div>
+    </div>
+  </aside>
+
+  <main class="viewer">
+    <canvas id="scene" width="1200" height="900"></canvas>
+    <div class="status">
+      <h3 id="focus-title">Focus</h3>
+      <pre id="focus-text">Move the pointer over a node.</pre>
+    </div>
+  </main>
+</div>
+
+<script id="song-data" type="application/json">__SONG_DATA_PAYLOAD__</script>
+<script>
+function parseEmbeddedData() {
+  const raw = document.getElementById("song-data").textContent.trim();
+  if (!raw || raw === "__SONG_DATA_PAYLOAD__") return null;
+  return JSON.parse(raw);
+}
+
+let DATA = parseEmbeddedData();
+const canvas = document.getElementById("scene");
+const ctx = canvas.getContext("2d");
+const focusTitle = document.getElementById("focus-title");
+const focusText = document.getElementById("focus-text");
+const loadStatus = document.getElementById("load-status");
+
+function setMeta() {
+  if (!DATA) return;
+  document.getElementById("meta-title").textContent = DATA.meta.title ?? "Untitled";
+  document.getElementById("meta-subtitle").textContent = DATA.meta.subtitle ?? "";
+  document.getElementById("meta-voices").textContent = (DATA.meta.voices || []).join(", ");
+  document.getElementById("meta-slices").textContent = DATA.meta.slice_count ?? "—";
+  document.getElementById("meta-bars").textContent = DATA.meta.bar_count ?? "—";
+  document.getElementById("meta-segments").textContent = DATA.meta.segment_count ?? "—";
+  document.getElementById("meta-eps").textContent = DATA.meta.best_epsilon_level1 ?? "—";
+}
+
+function validateData(candidate) {
+  return candidate && candidate.meta && candidate.layers &&
+    Array.isArray(candidate.layers.raw_running) &&
+    Array.isArray(candidate.layers.bars) &&
+    Array.isArray(candidate.layers.segments) &&
+    candidate.layers.piece;
+}
+
+function loadSongData(candidate, sourceLabel) {
+  if (!validateData(candidate)) {
+    loadStatus.textContent = "Invalid hierarchy JSON.";
+    return;
+  }
+  DATA = candidate;
+  pointer = null;
+  rebuildNodes();
+  setMeta();
+  loadStatus.textContent = sourceLabel;
+  draw();
+}
+
+async function handleFile(file) {
+  try {
+    const text = await file.text();
+    const candidate = JSON.parse(text);
+    loadSongData(candidate, `Loaded: ${file.name}`);
+  } catch (err) {
+    loadStatus.textContent = `Load failed: ${err.message}`;
+  }
+}
+
+const layerState = { raw: true, bars: true, segments: true, piece: true };
+for (const button of document.querySelectorAll("button[data-layer]")) {
+  button.addEventListener("click", () => {
+    const key = button.dataset.layer;
+    layerState[key] = !layerState[key];
+    button.classList.toggle("active", layerState[key]);
+    draw();
+  });
+}
+
+const CENTER = () => ({ x: canvas.width * 0.60, y: canvas.height * 0.52 });
+const RADII = {
+  piece: 44,
+  segments: 150,
+  bars: 255,
+  raw: 365,
+};
+
+function normIndex(i, total) {
+  if (total <= 1) return 0;
+  return i / (total - 1);
+}
+
+function angleForNorm(t) {
+  return -Math.PI / 2 + t * Math.PI * 2;
+}
+
+function pointOnRing(radius, t) {
+  const { x: cx, y: cy } = CENTER();
+  const angle = angleForNorm(t);
+  return {
+    x: cx + Math.cos(angle) * radius,
+    y: cy + Math.sin(angle) * radius,
+    angle,
+  };
+}
+
+function sigmaAlpha(sigma, lo = 0.15, hi = 1.55) {
+  const t = Math.max(0, Math.min(1, (sigma - lo) / (hi - lo)));
+  return 0.35 + t * 0.65;
+}
+
+function segmentForBar(barNum) {
+  return DATA.layers.segments.findIndex(seg => seg.bars.includes(barNum));
+}
+
+function buildNodes() {
+  const nodes = [];
+  const sliceCount = DATA.layers.raw_running.length;
+  const barCount = DATA.layers.bars.length;
+  const segCount = DATA.layers.segments.length;
+
+  for (const item of DATA.layers.raw_running) {
+    const t = normIndex(item.index, sliceCount);
+    const p = pointOnRing(RADII.raw, t);
+    nodes.push({
+      layer: "raw",
+      color: "#6fc3ff",
+      radius: 2.1,
+      p,
+      t,
+      data: item,
+      label: `Slice ${item.index + 1}`,
+      parentBar: item.bar,
+    });
+  }
+
+  for (const item of DATA.layers.bars) {
+    const midSlice = (item.slice_start + item.slice_end) / 2;
+    const t = normIndex(midSlice, sliceCount);
+    const p = pointOnRing(RADII.bars, t);
+    nodes.push({
+      layer: "bars",
+      color: "#ff8f5a",
+      radius: 5.8,
+      p,
+      t,
+      data: item,
+      label: `Bar ${item.bar}`,
+      parentSegment: segmentForBar(item.bar),
+    });
+  }
+
+  for (const item of DATA.layers.segments) {
+    const start = item.bars[0] - 1;
+    const end = item.bars[item.bars.length - 1] - 1;
+    const midBar = (start + end) / 2;
+    const t = normIndex(midBar, barCount);
+    const p = pointOnRing(RADII.segments, t);
+    nodes.push({
+      layer: "segments",
+      color: "#a8ff7a",
+      radius: 8.8,
+      p,
+      t,
+      data: item,
+      label: `Segment ${item.index + 1}`,
+    });
+  }
+
+  nodes.push({
+    layer: "piece",
+    color: "#ffe48a",
+    radius: 16,
+    p: CENTER(),
+    t: 0,
+    data: DATA.layers.piece,
+    label: DATA.meta.title,
+  });
+
+  return nodes;
+}
+
+let NODES = [];
+function rebuildNodes() {
+  NODES = DATA ? buildNodes() : [];
+}
+rebuildNodes();
+let pointer = null;
+
+function drawRing(radius, color, alpha, label) {
+  ctx.save();
+  const { x: cx, y: cy } = CENTER();
+  ctx.translate(cx, cy);
+  ctx.strokeStyle = color;
+  ctx.globalAlpha = alpha;
+  ctx.lineWidth = 1;
+   ctx.setLineDash([]);
+  ctx.beginPath();
+  ctx.arc(0, 0, radius, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.restore();
+  ctx.fillStyle = color;
+  ctx.globalAlpha = alpha;
+  ctx.font = "12px Georgia";
+  ctx.fillText(label, cx + radius + 12, cy);
+  ctx.globalAlpha = 1;
+}
+
+function arcForRange(radius, startT, endT, color, width, alpha) {
+  const { x: cx, y: cy } = CENTER();
+  const a0 = angleForNorm(startT);
+  const a1 = angleForNorm(endT);
+  ctx.strokeStyle = color;
+  ctx.lineWidth = width;
+  ctx.globalAlpha = alpha;
+  ctx.beginPath();
+  ctx.arc(cx, cy, radius, a0, a1);
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+}
+
+function strokeLine(x1, y1, x2, y2, color, width, alpha, blur = 0) {
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.globalAlpha = alpha;
+  ctx.lineWidth = width;
+  ctx.lineCap = "round";
+  if (blur > 0) {
+    ctx.shadowColor = color;
+    ctx.shadowBlur = blur;
+  }
+  ctx.beginPath();
+  ctx.moveTo(x1, y1);
+  ctx.lineTo(x2, y2);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawRawFlow() {
+  const raw = NODES.filter(n => n.layer === "raw");
+  if (!raw.length) return;
+  ctx.strokeStyle = "#6fc3ff";
+  ctx.globalAlpha = 0.18;
+  ctx.lineWidth = 1.1;
+  ctx.beginPath();
+  raw.forEach((n, i) => {
+    if (i === 0) ctx.moveTo(n.p.x, n.p.y);
+    else ctx.lineTo(n.p.x, n.p.y);
+  });
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+}
+
+function drawStructureBands() {
+  if (layerState.bars) {
+    for (const bar of DATA.layers.bars) {
+      const startT = normIndex(bar.slice_start, DATA.layers.raw_running.length);
+      const endT = normIndex(bar.slice_end, DATA.layers.raw_running.length);
+      arcForRange(RADII.bars, startT, endT, "rgba(229,136,88,0.62)", 5, 0.34);
+    }
+  }
+  if (layerState.segments) {
+    for (const seg of DATA.layers.segments) {
+      const startBar = seg.bars[0] - 1;
+      const endBar = seg.bars[seg.bars.length - 1] - 1;
+      const startT = normIndex(startBar, DATA.layers.bars.length);
+      const endT = normIndex(endBar, DATA.layers.bars.length);
+      arcForRange(RADII.segments, startT, endT, "rgba(143,219,104,0.58)", 9, 0.26);
+    }
+  }
+}
+
+function highlightRelations(node) {
+  if (!node) return;
+  const { x: cx, y: cy } = CENTER();
+
+  ctx.save();
+  ctx.strokeStyle = "rgba(255,255,255,0.18)";
+  ctx.lineWidth = 1.2;
+
+  if (node.layer === "bars") {
+    const startT = normIndex(node.data.slice_start, DATA.layers.raw_running.length);
+    const endT = normIndex(node.data.slice_end, DATA.layers.raw_running.length);
+    arcForRange(RADII.raw, startT, endT, "rgba(115,190,255,0.88)", 5, 0.72);
+    const segIdx = node.parentSegment;
+    if (segIdx >= 0) {
+      const segNode = NODES.find(n => n.layer === "segments" && n.data.index === segIdx);
+      if (segNode) {
+        strokeLine(node.p.x, node.p.y, segNode.p.x, segNode.p.y, "rgba(246,215,123,0.90)", 3.2, 0.88, 12);
+        strokeLine(segNode.p.x, segNode.p.y, cx, cy, "rgba(246,215,123,0.55)", 2.2, 0.55, 6);
+      }
+    }
+  } else if (node.layer === "segments") {
+    const bars = node.data.bars;
+    const startBar = bars[0] - 1;
+    const endBar = bars[bars.length - 1] - 1;
+    arcForRange(RADII.bars, normIndex(startBar, DATA.layers.bars.length), normIndex(endBar, DATA.layers.bars.length), "rgba(229,136,88,0.90)", 6, 0.66);
+    const firstBar = DATA.layers.bars.find(b => b.bar === bars[0]);
+    const lastBar = DATA.layers.bars.find(b => b.bar === bars[bars.length - 1]);
+    if (firstBar && lastBar) {
+      arcForRange(
+        RADII.raw,
+        normIndex(firstBar.slice_start, DATA.layers.raw_running.length),
+        normIndex(lastBar.slice_end, DATA.layers.raw_running.length),
+        "rgba(115,190,255,0.42)",
+        4,
+        0.28
+      );
+    }
+    for (const b of bars) {
+      const barNode = NODES.find(n => n.layer === "bars" && n.data.bar === b);
+      if (barNode) {
+        strokeLine(node.p.x, node.p.y, barNode.p.x, barNode.p.y, "rgba(143,219,104,0.55)", 1.8, 0.40, 4);
+      }
+    }
+    strokeLine(node.p.x, node.p.y, cx, cy, "rgba(246,215,123,0.92)", 3.4, 0.86, 12);
+  } else if (node.layer === "piece") {
+    for (const segNode of NODES.filter(n => n.layer === "segments")) {
+      strokeLine(cx, cy, segNode.p.x, segNode.p.y, "rgba(246,215,123,0.38)", 1.4, 0.22, 0);
+    }
+  } else if (node.layer === "raw") {
+    const barNode = NODES.find(n => n.layer === "bars" && n.data.bar === node.parentBar);
+    if (barNode) {
+      strokeLine(node.p.x, node.p.y, barNode.p.x, barNode.p.y, "rgba(115,190,255,0.92)", 2.3, 0.82, 10);
+      const segIdx = barNode.parentSegment;
+      if (segIdx >= 0) {
+        const segNode = NODES.find(n => n.layer === "segments" && n.data.index === segIdx);
+        if (segNode) {
+          strokeLine(barNode.p.x, barNode.p.y, segNode.p.x, segNode.p.y, "rgba(143,219,104,0.68)", 2.2, 0.54, 7);
+          strokeLine(segNode.p.x, segNode.p.y, cx, cy, "rgba(246,215,123,0.78)", 2.6, 0.65, 10);
+        }
+      }
+    }
+  }
+
+  ctx.restore();
+}
+
+function formatDetails(node) {
+  if (!node) return ["Move the pointer over a node."];
+  const d = node.data;
+  const lines = [node.label];
+  if (node.layer === "raw") {
+    lines.push(`time: ${d.time.toFixed(2)}   bar: ${d.bar}`);
+    lines.push(`path: slice -> bar ${d.bar} -> segment -> piece`);
+    lines.push(`sigma: ${d.sigma.toFixed(4)}   W²: ${d.w_energy.toFixed(4)}   RGB²: ${d.rgb_energy.toFixed(4)}`);
+    lines.push(d.event);
+  } else if (node.layer === "bars") {
+    lines.push(`contains slices ${d.slice_start + 1}-${d.slice_end + 1}`);
+    const segIdx = node.parentSegment;
+    if (segIdx >= 0) {
+      const seg = DATA.layers.segments[segIdx];
+      lines.push(`path: piece -> segment ${seg.index + 1} -> bar ${d.bar} -> slices`);
+    }
+    lines.push(`slices: ${d.slice_start + 1}-${d.slice_end + 1} (${d.n_slices})`);
+    lines.push(`sigma: ${d.sigma.toFixed(4)}   W²: ${d.w_energy.toFixed(4)}   RGB²: ${d.rgb_energy.toFixed(4)}`);
+  } else if (node.layer === "segments") {
+    lines.push(`contains bars ${d.bars[0]}-${d.bars[d.bars.length - 1]}`);
+    lines.push(`path: piece -> segment ${d.index + 1} -> bars -> slices`);
+    lines.push(`bars: ${d.bars.join(", ")}`);
+    lines.push(`label: ${d.label}`);
+    lines.push(`sigma: ${d.sigma.toFixed(4)}   W²: ${d.w_energy.toFixed(4)}   RGB²: ${d.rgb_energy.toFixed(4)}`);
+  } else {
+    lines.push(`path: piece -> all segments -> all bars -> all slices`);
+    lines.push(`piece sigma: ${d.sigma.toFixed(4)}`);
+    lines.push(`level-1 ε: ${DATA.meta.best_epsilon_level1}`);
+    lines.push(`closures: ${DATA.meta.level1_closures.join(", ")}`);
+  }
+  return lines;
+}
+
+function nearestNode(x, y) {
+  let best = null;
+  let bestDist = Infinity;
+  for (const node of NODES) {
+    if (!layerState[node.layer]) continue;
+    const dx = node.p.x - x;
+    const dy = node.p.y - y;
+    const dist = Math.hypot(dx, dy);
+    if (dist < bestDist && dist < Math.max(10, node.radius + 6)) {
+      best = node;
+      bestDist = dist;
+    }
+  }
+  return best;
+}
+
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  if (!DATA) {
+    ctx.fillStyle = "rgba(255,255,255,0.7)";
+    ctx.font = "24px Georgia";
+    ctx.fillText("Load a hierarchy JSON to view a song.", 80, 120);
+    return;
+  }
+  ctx.fillStyle = "rgba(255,255,255,0.04)";
+  for (let i = 0; i < 10; i++) {
+    ctx.fillRect(0, i * 90, canvas.width, 1);
+  }
+
+  drawRing(RADII.piece, "rgba(255,228,138,0.22)", 0.18, "piece core");
+  drawRing(RADII.segments, "rgba(168,255,122,0.24)", 0.22, "segments");
+  drawRing(RADII.bars, "rgba(255,143,90,0.28)", 0.22, "bars");
+  drawRing(RADII.raw, "rgba(111,195,255,0.35)", 0.25, "raw slices");
+
+  drawStructureBands();
+  if (layerState.raw) drawRawFlow();
+  highlightRelations(pointer);
+
+  for (const node of NODES) {
+    if (!layerState[node.layer]) continue;
+    ctx.beginPath();
+    ctx.fillStyle = node.color;
+    ctx.globalAlpha = node.layer === "piece" ? 1 : sigmaAlpha(node.data.sigma ?? 0.8);
+    ctx.shadowColor = node.color;
+    ctx.shadowBlur = node.layer === "piece" ? 22 : (node.layer === "segments" ? 12 : 8);
+    ctx.arc(node.p.x, node.p.y, node.radius, 0, Math.PI * 2);
+    ctx.fill();
+    if (pointer === node) {
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = "#ffffff";
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  focusTitle.textContent = pointer ? pointer.label : "Focus";
+  focusText.textContent = formatDetails(pointer).join("\n");
+}
+
+canvas.addEventListener("mousemove", (event) => {
+  const rect = canvas.getBoundingClientRect();
+  const x = (event.clientX - rect.left) * (canvas.width / rect.width);
+  const y = (event.clientY - rect.top) * (canvas.height / rect.height);
+  pointer = nearestNode(x, y);
+  draw();
+});
+
+canvas.addEventListener("mouseleave", () => {
+  pointer = null;
+  draw();
+});
+
+document.getElementById("file-input").addEventListener("change", (event) => {
+  const [file] = event.target.files || [];
+  if (file) handleFile(file);
+});
+
+document.addEventListener("dragover", (event) => {
+  event.preventDefault();
+});
+
+document.addEventListener("drop", (event) => {
+  event.preventDefault();
+  const [file] = event.dataTransfer.files || [];
+  if (file) handleFile(file);
+});
+
+setMeta();
+draw();
+</script>
+</body>
+</html>
