@@ -51,7 +51,7 @@ class Seer:
     __slots__ = ("_monitor", "_ingest", "_ingest_many")
 
     def __init__(self) -> None:
-        mon = closure_rs.StreamMonitor(GROUP_SPEC)
+        mon = closure_rs.StreamMonitor(GROUP_SPEC, hashed=True)
         self._monitor = mon
         self._ingest = mon.ingest
         self._ingest_many = mon.ingest_many
@@ -127,7 +127,7 @@ class Oracle:
     def from_records(cls, records: list[bytes]) -> "Oracle":
         """Build a full trace from a list of raw records."""
         obj = cls.__new__(cls)
-        obj._path = closure_rs.path_from_raw_bytes(GROUP_SPEC, records)
+        obj._path = closure_rs.path_from_raw_bytes(GROUP_SPEC, records, hashed=True)
         obj._records = list(records)
         return obj
 
@@ -135,9 +135,9 @@ class Oracle:
         """Add one record to the trace."""
         self._records.append(record)
         if self._path is None:
-            self._path = closure_rs.path_from_raw_bytes(GROUP_SPEC, self._records)
+            self._path = closure_rs.path_from_raw_bytes(GROUP_SPEC, self._records, hashed=True)
         else:
-            elem = closure_rs.closure_element_from_raw_bytes(GROUP_SPEC, [record])
+            elem = closure_rs.closure_element_from_raw_bytes(GROUP_SPEC, [record], hashed=True)
             self._path.append(np.array(elem, dtype=np.float64))
 
     def check_global(self) -> float:
@@ -199,7 +199,7 @@ class Oracle:
         if self._path is None:
             if not self._records:
                 raise ValueError("Oracle is empty — append records first")
-            self._path = closure_rs.path_from_raw_bytes(GROUP_SPEC, self._records)
+            self._path = closure_rs.path_from_raw_bytes(GROUP_SPEC, self._records, hashed=True)
 
 
 # ── Witness ───────────────────────────────────────────────────────────
@@ -230,7 +230,7 @@ class Witness:
         """Build a reference from raw records."""
         elements = []
         for record in records:
-            elem = closure_rs.closure_element_from_raw_bytes(GROUP_SPEC, [record])
+            elem = closure_rs.closure_element_from_raw_bytes(GROUP_SPEC, [record], hashed=True)
             elements.append(np.array(elem))
         return cls(elements)
 
@@ -264,13 +264,14 @@ class Witness:
             return data
         elements = []
         for record in data:
-            elem = closure_rs.closure_element_from_raw_bytes(GROUP_SPEC, [record])
+            elem = closure_rs.closure_element_from_raw_bytes(GROUP_SPEC, [record], hashed=True)
             elements.append(np.array(elem))
         return np.array(elements)
 
     @property
     def group(self) -> str:
         return GROUP_SPEC
+
 
     def state(self) -> ClosureState:
         """The reference composition as a point on the ball."""

@@ -28,13 +28,13 @@ _SPHERE = closure_rs.sphere()
 
 
 def embed(record: bytes) -> ClosureState:
-    """The entry door. Takes any raw bytes — a row, a transaction, a
-    message — hashes them (SHA-256), and places the result on S³ as a
-    unit quaternion. Deterministic: same bytes always land on the same
-    point. After this, the SDK only knows geometry, not what the bytes
-    meant.
+    """The SDK entry door. Takes raw bytes, hashes them with SHA-256,
+    and places the result on S³ as a unit quaternion.
+
+    The SDK stays in cryptographic mode on purpose. Geometric byte
+    composition is used by Closure DNA, not by the verification SDK.
     """
-    elem = closure_rs.closure_element_from_raw_bytes("Sphere", [record])
+    elem = closure_rs.closure_element_from_raw_bytes("Sphere", [record], hashed=True)
     return ClosureState(group="Sphere", element=np.array(elem))
 
 

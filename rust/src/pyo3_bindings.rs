@@ -144,17 +144,18 @@ impl GroupDescriptor {
         }
     }
 
-    /// Embed a raw byte record into a group element via SHA-256.
-    /// This is the entry point to the pipeline for raw data.
-    /// For Hybrid groups, embeds into each factor and concatenates.
-    fn embed_record(&self, record: &[u8]) -> Vec<f64> {
+    /// Embed a raw byte record into a group element.
+    /// For Sphere, `hashed=true` selects SHA-256 embedding and
+    /// `hashed=false` selects direct geometric byte composition.
+    /// For Hybrid groups, the same choice is applied recursively.
+    fn embed_record(&self, record: &[u8], hashed: bool) -> Vec<f64> {
         match self {
             GroupDescriptor::Circle => crate::embed::bytes_to_phase(record),
-            GroupDescriptor::Sphere => crate::embed::bytes_to_sphere(record),
+            GroupDescriptor::Sphere => crate::embed::bytes_to_sphere(record, hashed),
             GroupDescriptor::Torus(k) => crate::embed::bytes_to_torus(record, *k),
             GroupDescriptor::Hybrid(left, right) => {
-                let mut out = left.embed_record(record);
-                out.extend(right.embed_record(record));
+                let mut out = left.embed_record(record, hashed);
+                out.extend(right.embed_record(record, hashed));
                 out
             }
         }
@@ -551,6 +552,7 @@ impl PyGeometricPath {
 #[pyclass(name = "StreamMonitor")]
 pub struct PyStreamMonitor {
     kind: GroupDescriptor,
+    hashed: bool,
     name: String,
     group: Box<dyn LieGroup>,
     running: Vec<f64>,
@@ -560,7 +562,7 @@ pub struct PyStreamMonitor {
 
 impl PyStreamMonitor {
     fn ingest_one(&mut self, record: &[u8]) {
-        let elem = self.kind.embed_record(record);
+        let elem = self.kind.embed_record(record, self.hashed);
         self.group.compose_into(&self.running, &elem, &mut self.buf);
         self.running.copy_from_slice(&self.buf);
         self.n += 1;
@@ -572,9 +574,10 @@ impl PyStreamMonitor {
     /// Create a streaming monitor for raw bytes.
     ///
     /// `group_name`: e.g. "Circle", "Sphere", "Torus(8)", "Hybrid(Torus(8), Sphere)".
+    /// `hashed`: for Sphere/Hybrid(Sphere, ...), choose SHA-256 or direct geometric embedding.
     #[new]
-    #[pyo3(signature = (group_name))]
-    fn new(group_name: &str) -> PyResult<Self> {
+    #[pyo3(signature = (group_name, hashed = true))]
+    fn new(group_name: &str, hashed: bool) -> PyResult<Self> {
         let descriptor = parse_group_descriptor(group_name)?;
         let name = descriptor.canonical_name();
         let group = descriptor.to_group();
@@ -582,6 +585,7 @@ impl PyStreamMonitor {
         let buf = vec![0.0; group.dim()];
         Ok(Self {
             kind: descriptor,
+            hashed,
             name,
             group,
             running,
@@ -729,21 +733,25 @@ impl PyHierarchicalClosure {
 }
 
 // ── Full-pipeline helpers ────────────────────────────────────────────
-// These run the entire pipeline (raw bytes → SHA-256 → embed → compose)
+// These run the entire pipeline (raw bytes -> embed -> compose)
 // in Rust. No per-element round-trip to Python.
 
 /// Build a GeometricPath from raw byte records — full pipeline in Rust.
 ///
-/// Each record is hashed (SHA-256), embedded into a group element, and
-/// composed into the running product. Returns a full path with all
-/// intermediates, so you can localize corruption afterward.
+/// Each record is embedded into a group element and composed into the
+/// running product. For Sphere, `hashed=true` uses SHA-256 embedding and
+/// `hashed=false` uses direct geometric byte composition.
 #[pyfunction]
-#[pyo3(signature = (group_name, records))]
-fn path_from_raw_bytes(group_name: &str, records: Vec<Vec<u8>>) -> PyResult<PyGeometricPath> {
+#[pyo3(signature = (group_name, records, hashed = true))]
+fn path_from_raw_bytes(
+    group_name: &str,
+    records: Vec<Vec<u8>>,
+    hashed: bool,
+) -> PyResult<PyGeometricPath> {
     let descriptor = parse_group_descriptor(group_name)?;
     let mut path = crate::path::GeometricPath::new(descriptor.to_group());
     for r in &records {
-        let elem = descriptor.embed_record(r);
+        let elem = descriptor.embed_record(r, hashed);
         path.append(&elem);
     }
     Ok(PyGeometricPath { inner: path })
@@ -754,18 +762,19 @@ fn path_from_raw_bytes(group_name: &str, records: Vec<Vec<u8>>) -> PyResult<PyGe
 /// Same pipeline as path_from_raw_bytes, but discards intermediates.
 /// Use when you only need σ (detection), not localization.
 #[pyfunction]
-#[pyo3(signature = (group_name, records))]
+#[pyo3(signature = (group_name, records, hashed = true))]
 fn closure_element_from_raw_bytes<'py>(
     py: Python<'py>,
     group_name: &str,
     records: Vec<Vec<u8>>,
+    hashed: bool,
 ) -> PyResult<Bound<'py, PyArray1<f64>>> {
     let descriptor = parse_group_descriptor(group_name)?;
     let group = descriptor.to_group();
     let mut running = group.identity();
     let mut buf = vec![0.0; group.dim()];
     for r in &records {
-        let elem = descriptor.embed_record(r);
+        let elem = descriptor.embed_record(r, hashed);
         group.compose_into(&running, &elem, &mut buf);
         running.copy_from_slice(&buf);
     }

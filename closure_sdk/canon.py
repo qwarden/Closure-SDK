@@ -302,8 +302,8 @@ def gilgamesh(
         return []
 
     # --- compose both on S³, localize ---
-    src_path = closure_rs.path_from_raw_bytes(GROUP_SPEC, source_records) if source_records else closure_rs.GeometricPath.from_elements(closure_rs.sphere(), np.empty((0, 4), dtype=np.float64))
-    tgt_path = closure_rs.path_from_raw_bytes(GROUP_SPEC, target_records) if target_records else closure_rs.GeometricPath.from_elements(closure_rs.sphere(), np.empty((0, 4), dtype=np.float64))
+    src_path = closure_rs.path_from_raw_bytes(GROUP_SPEC, source_records, hashed=True) if source_records else closure_rs.GeometricPath.from_elements(closure_rs.sphere(), np.empty((0, 4), dtype=np.float64))
+    tgt_path = closure_rs.path_from_raw_bytes(GROUP_SPEC, target_records, hashed=True) if target_records else closure_rs.GeometricPath.from_elements(closure_rs.sphere(), np.empty((0, 4), dtype=np.float64))
     first_fault, checks = src_path.localize_against(tgt_path)
 
     if first_fault is None:
@@ -484,14 +484,14 @@ def gilgamesh_detailed(
     n_tgt = len(target_records)
 
     src_path = (
-        closure_rs.path_from_raw_bytes(GROUP_SPEC, source_records)
+        closure_rs.path_from_raw_bytes(GROUP_SPEC, source_records, hashed=True)
         if source_records
         else closure_rs.GeometricPath.from_elements(
             closure_rs.sphere(), np.empty((0, 4), dtype=np.float64)
         )
     )
     tgt_path = (
-        closure_rs.path_from_raw_bytes(GROUP_SPEC, target_records)
+        closure_rs.path_from_raw_bytes(GROUP_SPEC, target_records, hashed=True)
         if target_records
         else closure_rs.GeometricPath.from_elements(
             closure_rs.sphere(), np.empty((0, 4), dtype=np.float64)
