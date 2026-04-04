@@ -20,8 +20,8 @@
     <div class="nav-mobile-menu">
       <a href="index.html">Home</a>
       <a aria-current="page" href="stack.html">Where we are</a>
-      <a href="origin.html">How we got here</a>
       <a href="horizon.html">What the future holds</a>
+      <a href="origin.html">How we got here</a>
       <a href="supporting-models.html">Supporting Models</a>
       <a class="nav-mobile-accent" href="seeing-code.html">Seeing Code</a>
       <a href="support.html">Support &amp; Collaborate</a>
@@ -35,9 +35,9 @@
     <span class="nav-triad">
       <a aria-current="page" href="stack.html">Where we are</a>
       <span class="nav-dot">•</span>
-      <a href="origin.html">How we got here</a>
-      <span class="nav-dot">•</span>
       <a href="horizon.html">What the future holds</a>
+      <span class="nav-dot">•</span>
+      <a href="origin.html">How we got here</a>
     </span>
     <span class="nav-sep">/</span>
     <a href="supporting-models.html">Supporting Models</a>
@@ -93,21 +93,71 @@
     <h2>Know whether your data arrived intact &mdash; and exactly what didn&rsquo;t</h2>
 
     <p>
-      The core primitive. Every record gets hashed and composed onto S&sup3;.
-      When a sequence is coherent, the composition closes back to where it started.
-      When it isn&rsquo;t, the product drifts, and the drift is exact: how much,
-      where in the sequence, and what kind of fault &mdash; missing record or reorder,
-      always distinguishable.
+      Every integrity system answers the same question &mdash; did this data
+      change? The difference is what they say next. A hash tells you yes or no,
+      nothing else. A Merkle tree can tell you which record changed. Closure tells
+      you which record, how much the value drifted, and whether the sequence was
+      altered or rearranged &mdash; a distinction that separates a corruption from
+      a replay attack, and one that has never existed in an integrity primitive
+      before. This additional layer runs on top of the hash you are already
+      computing; the overhead is +5%.
     </p>
 
     <p>
       Two tools implement this. The CLI handles file-to-file comparison and live
-      stream monitoring. The <code>bind()</code> / <code>prism</code> functions handle
-      zero-knowledge verification: two parties confirm they hold the same data by
-      exchanging 16 bytes. The raw data never moves. Neither side can fake agreement.
+      monitoring of data streams. The <code>bind()</code> / <code>prism</code>
+      functions handle zero-knowledge verification: two parties confirm they hold
+      identical data by exchanging 16 bytes, the raw records staying on each side,
+      the exchange mathematically unforgeable.
     </p>
 
-    <h3>Performance against Merkle trees (100,000 records)</h3>
+    <h3>What each method actually gives you</h3>
+
+    <div class="bench-wrap">
+      <table class="bench">
+        <thead>
+          <tr>
+            <th>Capability</th>
+            <th class="r">SHA-256</th>
+            <th class="r">Hash Chain</th>
+            <th class="r">Merkle</th>
+            <th class="r">Closure</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Detects any corruption</td>                       <td class="r">✓</td>    <td class="r">✓</td>        <td class="r">✓</td>        <td class="r win">✓</td></tr>
+          <tr><td>Pinpoints the exact record</td>                   <td class="r na">—</td>  <td class="r">✓ (slow)</td> <td class="r">✓</td>        <td class="r win">✓</td></tr>
+          <tr><td>Measures how much it drifted (&sigma;)</td>       <td class="r na">—</td>  <td class="r na">—</td>     <td class="r na">—</td>     <td class="r win">✓</td></tr>
+          <tr><td>Distinguishes reordering from corruption</td>     <td class="r na">—</td>  <td class="r na">—</td>     <td class="r na">—</td>     <td class="r win">✓</td></tr>
+          <tr><td>Verify without sharing the raw data</td>          <td class="r na">—</td>  <td class="r na">—</td>     <td class="r na">—</td>     <td class="r win">✓</td></tr>
+          <tr><td>Recovers the original records</td>                <td class="r na">—</td>  <td class="r na">—</td>     <td class="r na">—</td>     <td class="r win">✓</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Single-fault localization at scale &mdash; 1,000,000 records</h3>
+
+    <div class="bench-wrap">
+      <table class="bench">
+        <thead>
+          <tr>
+            <th>Method</th>
+            <th class="r">Time to locate</th>
+            <th class="r">Checks needed</th>
+            <th class="r">vs Closure</th>
+            <th>What it reports</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Closure</td>     <td class="r win">6.5 &mu;s</td>   <td class="r win">20</td>             <td class="r">—</td>                    <td class="win">&ldquo;record #750,000 drifted by 1.47&rdquo;</td></tr>
+          <tr><td>Merkle</td>      <td class="r">13.1 &mu;s</td>      <td class="r">21</td>                 <td class="r">2&times; slower</td>       <td>&ldquo;record #750,000 differs&rdquo;</td></tr>
+          <tr><td>Hash Chain</td>  <td class="r">60.4 ms</td>         <td class="r">750,001</td>            <td class="r">9,245&times; slower</td>   <td>&ldquo;something changed&rdquo;</td></tr>
+          <tr><td>SHA-256</td>     <td class="r na">—</td>            <td class="r na">—</td>               <td class="r na">—</td>                 <td>&ldquo;something changed&rdquo;</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Multi-fault detection &mdash; 100,000 records</h3>
 
     <div class="bench-wrap">
       <table class="bench">
@@ -130,9 +180,11 @@
     </div>
 
     <p>
-      A Merkle tree must rebuild after every fault it finds &mdash; O(k&middot;n) for
-      k faults. This system composes both sequences once and classifies all faults in
-      a single walk. The cost is O(n) regardless of fault count.
+      A Merkle tree must rebuild itself after every fault it finds, so the work
+      grows with each new corruption it encounters. Closure walks both sequences
+      once and classifies all faults in that single pass &mdash; the time stays
+      flat regardless of how many problems exist. At 50 faults the gap reaches
+      48&times;, and it keeps widening from there.
     </p>
 
     <p class="muted small">
@@ -147,10 +199,21 @@
     <h2>Storage with integrity built in</h2>
 
     <p>
-      Closure DNA is a database where every column is a composition tree on S&sup3;.
-      The data lives in the structure, not alongside it. Integrity is not an
-      optional check you run afterward &mdash; it is native to how the data is held.
-      Any record change, deletion, or insertion is detectable in microseconds.
+      Closure DNA is a database you query with standard SQL. As it stores data, it
+      continuously maintains a geometric fingerprint of everything it holds, so when
+      you ask whether your data is intact, the answer comes back in microseconds
+      without scanning any records. Any change to the data &mdash; deliberate or
+      accidental &mdash; shows up immediately.
+    </p>
+
+    <p>
+      Named snapshots work the way git commits do: capture the current state, name
+      it, restore to it exactly whenever you need to. Resonance search finds records
+      that are geometrically similar to a query &mdash; which users have tastes
+      closest to this one, which products sit near this one in the catalog, which
+      past events most resemble what is happening now. Two separate installations can compare a single derived value to
+      confirm they hold identical copies of a table, each keeping its records
+      private.
     </p>
 
     <h3>Benchmark against SQLite &mdash; 1,000,000 records</h3>
@@ -189,11 +252,13 @@
 
     <div class="callout">
       <p>
-        The sidecars are the key architectural point. Your raw data lives in one
-        place. The geometric state &mdash; the verification layer &mdash; is a
-        derived artifact, rebuildable from the columns. Two systems that want to
-        confirm they hold identical data exchange a single composition product:
-        one point on S&sup3;, 32&nbsp;bytes. Neither side exposes its records.
+        The tradeoff worth knowing: on 100,000 records, Closure DNA uses 26.5&thinsp;MB
+        on disk versus 6.1&thinsp;MB for SQLite. The raw column data is 4.7&thinsp;MB
+        &mdash; comparable to SQLite &mdash; but each column carries a geometric
+        sidecar that enables the fast queries, integrity checks, and resonance search.
+        Those sidecars add up to 20.2&thinsp;MB, and they are fully rebuildable from
+        the data: delete them and they regenerate. The cold-start time reflects the
+        same trade &mdash; slightly slower to open, meaningfully faster once running.
       </p>
     </div>
 
@@ -208,38 +273,49 @@
     <h2>Computation without parameters</h2>
 
     <p>
-      Enkidu is a prototype agent that forages, builds shelter, and survives in a
-      hostile environment. It has no neural network, no trained weights, no learned
-      parameters whatsoever. Every decision is a single geometric comparison:
-      which distance from identity is larger, and which action most reduces it.
+      Enkidu is a simulated agent navigating a hostile world: foraging for food,
+      building shelter, staying alive. Every decision comes from a single question
+      &mdash; what need is pulling him furthest from balance right now, and what
+      action brings him closest to rest? The same geometry that stores and verifies
+      data also makes that measurement, and the agent acts on whatever the answer
+      is. There is no trained model, because the geometry is already the answer.
     </p>
 
     <p>
-      The environment computes the gradient. Identity is homeostasis. Free energy
-      is geodesic distance from identity on S&sup3;. The geometry supplies the path
-      home. Everything you see in the demo &mdash; the foraging routes, the
-      hesitation when drives are balanced, the camps extending his territory in
-      scarce environments &mdash; emerges from that one operation applied
-      repeatedly to a world that refuses to leave him at rest.
+      Everything you see in the demo &mdash; the foraging routes, the hesitation
+      when two drives are equally urgent, the way his territory expands when
+      resources get scarce &mdash; emerges from that one operation applied
+      repeatedly to a world that refuses to leave him alone.
     </p>
+
+    <figure style="margin: 1.2em 0;">
+      <img src="enkidu-alive.png" alt="Enkidu agent simulation" style="width:100%; border-radius:4px; display:block;" />
+    </figure>
 
     <p>
       <a href="enkidu.html">Run it live &rarr;</a>
     </p>
 
+    <p class="muted small" style="margin-top:-0.4em;">
+      The torus knot animating the panel above is lifted directly from Enkidu&rsquo;s
+      own visualization &mdash; the same code, the same geometry, running here as it
+      runs inside the agent.
+    </p>
+
     <h3>Why this matters beyond the demo</h3>
 
     <p>
-      A transformer learns attention through millions of parameters trained on
-      billions of tokens. Friston&rsquo;s Free Energy Principle describes the
-      same process through variational calculus. Enkidu computes both directly:
-      compose, measure distance from identity, act on the largest. The
-      correspondence is not metaphorical &mdash; it is exact.
+      The behavioral neuroscience community has spent decades building a formal
+      account of how living systems make decisions. The answer it keeps arriving
+      at is the same operation: measure the gap between where you are and where
+      you should be, act on what is most urgent. Enkidu runs that principle
+      directly in arithmetic, and the correspondence to the dominant theory of
+      biological intelligence is exact.
     </p>
 
     <p>
-      Memory, verification, and execution share one representation. The database
-      is not a separate layer from the compute. This is the direction of the work.
+      Memory, verification, and execution share one representation &mdash;
+      database and compute are the same layer. This is the direction of the work.
     </p>
   </div>
 

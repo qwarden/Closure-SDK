@@ -72,24 +72,33 @@
     .scene-dot.active { background: #1a1a1a; transform: scale(1.6); }
 
     @media (max-width: 740px) {
-      .hz-wrapper    { grid-template-columns: 1fr; height: auto; }
-      .hz-slides     { height: auto; overflow-y: visible; scroll-snap-type: none; }
-      .hz-slide      { height: auto; min-height: 85vh; padding: 2rem 1.5rem; }
+      /* Allow the page itself to scroll on mobile */
+      body.has-ribbon main { overflow: auto; }
 
-      /* Canvas floats to the top and sticks while slides scroll below */
+      /* Push slide content below the fixed canvas */
+      .hz-wrapper { display: block; height: auto; padding-top: 48vw; }
+
+      /* Canvas pinned to top of screen — stays visible as slides scroll */
       .hz-canvas-col {
-        order: -1;
-        position: sticky;
-        top: 0;
-        z-index: 2;
-        height: 52vw;
-        gap: 8px;
-        padding: 0.75rem;
+        position: fixed;
+        top: 0; left: 0; right: 0;
+        height: 48vw;
+        z-index: 5;          /* nav is z-index:10, stays above */
         background: #fafafa;
+        padding-top: 54px;   /* clear the sticky nav */
+        padding-bottom: 0.25rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
       }
-      #webgl-canvas  { width: min(46vw, 240px); height: min(46vw, 240px); }
-      .hz-dots       { display: none; }
-      .site-nav      { position: sticky; z-index: 10; }
+      #webgl-canvas { width: min(36vw, 180px); height: min(36vw, 180px); }
+      .hz-dots      { display: none; }
+
+      .hz-slides { height: auto; overflow-y: visible; scroll-snap-type: none; border-right: none; }
+      .hz-slide  { height: auto; min-height: 80vh; padding: 2rem 1.5rem; }
+      .site-nav  { position: sticky; }
     }
   </style>
 </head>
@@ -106,8 +115,8 @@
     <div class="nav-mobile-menu">
       <a href="index.html">Home</a>
       <a href="stack.html">Where we are</a>
-      <a href="origin.html">How we got here</a>
       <a aria-current="page" href="horizon.html">What the future holds</a>
+      <a href="origin.html">How we got here</a>
       <a href="supporting-models.html">Supporting Models</a>
       <a class="nav-mobile-accent" href="seeing-code.html">Seeing Code</a>
       <a href="support.html">Support &amp; Collaborate</a>
@@ -121,9 +130,9 @@
     <span class="nav-triad">
       <a href="stack.html">Where we are</a>
       <span class="nav-dot">•</span>
-      <a href="origin.html">How we got here</a>
-      <span class="nav-dot">•</span>
       <a aria-current="page" href="horizon.html">What the future holds</a>
+      <span class="nav-dot">•</span>
+      <a href="origin.html">How we got here</a>
     </span>
     <span class="nav-sep">/</span>
     <a href="supporting-models.html">Supporting Models</a>

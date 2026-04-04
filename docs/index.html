@@ -6,6 +6,69 @@
   <meta name="closure-asset-version" content="2026-04-01-1" />
   <title>Closure</title>
   <link rel="stylesheet" href="styles.css?v=2026-04-01-1" />
+  <style>
+    .index-nav {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      margin: 1.8em 0 1em;
+      border-top: 1px solid #e0e0e0;
+    }
+    .index-nav a {
+      display: flex;
+      flex-direction: column;
+      padding: 14px 4px;
+      border-bottom: 1px solid #e0e0e0;
+      text-decoration: none;
+      color: var(--text);
+      transition: padding-left 0.15s ease;
+    }
+    .index-nav a:hover { padding-left: 8px; }
+    .index-nav-title {
+      font-size: 16px;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      display: flex;
+      align-items: center;
+      gap: 0.4em;
+    }
+    .index-nav-title .arr {
+      color: #335c59;
+      font-size: 1.15em;
+      transition: transform 0.2s ease;
+    }
+    .index-nav a:hover .arr { transform: translateX(4px); }
+    .index-nav-sub {
+      font-size: 12px;
+      color: #999;
+      margin-top: 3px;
+      font-weight: 400;
+    }
+
+    .index-stats {
+      display: flex;
+      flex-direction: column;
+      gap: 1.1em;
+      padding: 1.4em 0 0.6em;
+      border-top: 1px solid #e8e8e8;
+      margin-top: 0.5em;
+    }
+    .index-stat-num {
+      display: block;
+      font-size: 2.1rem;
+      font-weight: 700;
+      color: #335c59;
+      letter-spacing: -0.02em;
+      line-height: 1;
+    }
+    .index-stat-label {
+      display: block;
+      font-size: 12px;
+      color: #999;
+      margin-top: 0.2em;
+      line-height: 1.4;
+    }
+  </style>
 </head>
 <body class="has-ribbon">
 
@@ -20,8 +83,8 @@
     <div class="nav-mobile-menu">
       <a aria-current="page" href="index.html">Home</a>
       <a href="stack.html">Where we are</a>
-      <a href="origin.html">How we got here</a>
       <a href="horizon.html">What the future holds</a>
+      <a href="origin.html">How we got here</a>
       <a href="supporting-models.html">Supporting Models</a>
       <a class="nav-mobile-accent" href="seeing-code.html">Seeing Code</a>
       <a href="support.html">Support &amp; Collaborate</a>
@@ -35,9 +98,9 @@
     <span class="nav-triad">
       <a href="stack.html">Where we are</a>
       <span class="nav-dot">•</span>
-      <a href="origin.html">How we got here</a>
-      <span class="nav-dot">•</span>
       <a href="horizon.html">What the future holds</a>
+      <span class="nav-dot">•</span>
+      <a href="origin.html">How we got here</a>
     </span>
     <span class="nav-sep">/</span>
     <a href="supporting-models.html">Supporting Models</a>
@@ -60,37 +123,33 @@
       <h1>Closure</h1>
 
       <p>
-        Closure is a geometric computer &mdash; Von Neumann architecture,
-        but built on geometry instead of binary strings. Data is ordered
-        hierarchically in space rather than addressed as bit patterns,
-        and that changes what a computer can be.
+        Closure is a computer built on geometry &mdash; the same mathematical
+        structure that holds a record also verifies it, indexes it, and runs
+        computation over it. Every modern architecture treats storage,
+        verification, and compute as three separate engineering problems because
+        they were built on different mathematical foundations. Geometry
+        eliminates the separation.
       </p>
 
       <p>
-        Because data already lives in geometry, memory, verification, and
-        execution share the same underlying structure. That same structure is
-        also a new transformer architecture: memory, retrieval, and model
-        collapse into one object. A new general computer and a new transformer
-        architecture are the same thing.
+        Three things are working today: a data-integrity protocol that finds
+        corruption 48&times; faster than Merkle trees, a database that
+        outperforms SQLite on almost every axis, and a learning system that
+        runs without weights, without gradient descent, without parameters of
+        any kind. The same primitive underlies all three.
       </p>
 
       <p>
-        The sphere to the right is that geometry running live. Every point is
-        a record, &sigma; is the drift of the whole sequence. Pull to open it,
-        release to close.
+        The sphere to the right is that geometry running live &mdash; every
+        point a record, &sigma; the drift of the whole sequence. Pull to open
+        it, release to watch it close. The particle animations across this site
+        draw directly from the same SDK: what you are reading about is what you
+        are seeing.
       </p>
 
-      <p class="muted small">
-        Built from first principles by Walter. &nbsp;
-        <a href="https://zenodo.org/records/19140055" target="_blank" rel="noopener">Paper</a>
-        &nbsp;&middot;&nbsp;
-        <a href="https://github.com/faltz009/Closure-SDK" target="_blank" rel="noopener">Code</a>
-        &nbsp;&middot;&nbsp;
-        <a href="collaborate.html">Get in touch</a>
-      </p>
     </div>
 
-    <div style="display:flex; flex-direction:column; align-items:center; gap:24px;">
+    <div style="display:flex; flex-direction:column; align-items:stretch; gap:24px;">
 
       <div style="width:100%; cursor:crosshair;">
         <canvas id="sphere-canvas" style="display:block; border-radius:4px;"></canvas>
@@ -99,39 +158,29 @@
         </p>
       </div>
 
-      <div style="width:100%;">
-        <h3>Memory</h3>
-        <p>
-          The same primitive that represents a record also checks whether a
-          sequence of them is coherent. The database is not separate from the
-          integrity layer &mdash; they are the same object. Point lookups
-          6.9&times; faster than SQLite. Integrity checks 89,885&times; faster.
-          <a href="stack.html">Details &rarr;</a>
-        </p>
+      <nav class="index-nav">
+        <a href="stack.html">
+          <span class="index-nav-title">Where we are <span class="arr">→</span></span>
+          <span class="index-nav-sub">benchmarks, demos, the technical stack</span>
+        </a>
+        <a href="horizon.html">
+          <span class="index-nav-title">What the future holds <span class="arr">→</span></span>
+          <span class="index-nav-sub">intelligence, hardware, security, quantum, biology</span>
+        </a>
+        <a href="origin.html">
+          <span class="index-nav-title">How we got here <span class="arr">→</span></span>
+          <span class="index-nav-sub">the research path from neuroscience to geometry</span>
+        </a>
+      </nav>
 
-        <h3>Verification</h3>
-        <p>
-          Finding corruption normally means scanning. Here the sequence measures
-          its own coherence &mdash; one number tells you what broke, where, and
-          how much. 50 corruptions across 100,000 records: 384&nbsp;ms.
-          A Merkle tree takes 18.6 seconds.
-          <a href="stack.html">Details &rarr;</a>
-        </p>
-
-        <h3>Computation</h3>
-        <p>
-          Programs and data share the same geometric representation.
-          The learning system that runs without parameters is the same
-          architecture turned toward execution &mdash; no weights, no gradient
-          descent, no separation between what is stored and what runs.
-          <a href="enkidu.html">Watch it live &rarr;</a>
-        </p>
-
-        <p style="margin-top:1.6em;" class="muted small">
-          Seeking investment and collaboration.
-          <a href="collaborate.html">Get in touch &rarr;</a>
-        </p>
-      </div>
+      <p class="muted small" style="margin-top:1.2em;">
+        Built from first principles. &nbsp;
+        <a href="https://zenodo.org/records/19140055" target="_blank" rel="noopener">Paper</a>
+        &nbsp;&middot;&nbsp;
+        <a href="https://github.com/faltz009/Closure-SDK" target="_blank" rel="noopener">Code</a>
+        &nbsp;&middot;&nbsp;
+        <a href="collaborate.html">Get in touch</a>
+      </p>
 
     </div>
 
