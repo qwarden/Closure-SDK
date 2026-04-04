@@ -185,7 +185,7 @@ const io = new IntersectionObserver(entries => {
     if (e.isIntersecting)
       tgt = parseInt(e.target.dataset.scene) / (NS - 1);
   });
-}, { root: slidesRoot, threshold: 0.5 });
+}, { root: window.innerWidth > 740 ? slidesRoot : null, threshold: 0.5 });
 slides.forEach(s => io.observe(s));
 
 const updateDots = s => {

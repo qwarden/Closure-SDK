@@ -72,12 +72,24 @@
     .scene-dot.active { background: #1a1a1a; transform: scale(1.6); }
 
     @media (max-width: 740px) {
-      .hz-wrapper { position: relative; top: 0; grid-template-columns: 1fr; height: auto; }
-      .hz-slides  { height: auto; overflow-y: visible; scroll-snap-type: none; }
-      .hz-slide   { height: auto; min-height: 100vh; }
-      .hz-canvas-col { height: 70vw; }
-      #webgl-canvas  { width: min(80vw, 380px); height: min(80vw, 380px); }
-      .site-nav { position: sticky; }
+      .hz-wrapper    { grid-template-columns: 1fr; height: auto; }
+      .hz-slides     { height: auto; overflow-y: visible; scroll-snap-type: none; }
+      .hz-slide      { height: auto; min-height: 85vh; padding: 2rem 1.5rem; }
+
+      /* Canvas floats to the top and sticks while slides scroll below */
+      .hz-canvas-col {
+        order: -1;
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        height: 52vw;
+        gap: 8px;
+        padding: 0.75rem;
+        background: #fafafa;
+      }
+      #webgl-canvas  { width: min(46vw, 240px); height: min(46vw, 240px); }
+      .hz-dots       { display: none; }
+      .site-nav      { position: sticky; z-index: 10; }
     }
   </style>
 </head>
