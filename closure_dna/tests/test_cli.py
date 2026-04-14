@@ -8,7 +8,7 @@ import time
 import urllib.request
 from pathlib import Path
 
-from closure_dna.demo import demo_database_path
+from closure_dna.demo import demo_database_path, build_demo_database
 
 def fresh_dir(name: str) -> Path:
     return Path(tempfile.mkdtemp(prefix=f"cdna_cli_{name}_"))
@@ -233,8 +233,8 @@ def test_cli_web_serves_ui_and_api():
 
 def test_cli_web_can_open_other_database_path():
     port = _free_port()
-    browser_demo = demo_database_path("browser_profile")
-    music_demo = demo_database_path("music_streaming")
+    browser_demo = build_demo_database("browser_profile")
+    music_demo = build_demo_database("music_streaming")
     proc = subprocess.Popen(
         [
             sys.executable,

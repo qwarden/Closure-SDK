@@ -149,6 +149,11 @@ LEARNING
 
 ## Experiments
 
+**[Run in the browser →](https://faltz009.github.io/Closure-SDK/experiments.html)**
+Conway's GoL on S³ and the Gray Game (three interference modes) run live in JS — no install.
+
+![Gray Game — Edge regime](../gray-game.png)
+
 Eleven numbered experiments plus two live terminal visualizers.
 All pass `cargo run --example <name> --release`.
 

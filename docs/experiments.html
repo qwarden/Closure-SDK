@@ -1,0 +1,1032 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Live Experiments — Closure</title>
+  <link rel="stylesheet" href="styles.css?v=2026-04-14-1" />
+  <style>
+    .exp-hero {
+      padding: 72px 0 40px;
+      max-width: var(--max-w);
+      margin: 0 auto;
+    }
+    .exp-hero h1 {
+      font-size: 2.5rem;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      margin-bottom: 16px;
+    }
+    .exp-hero p {
+      color: var(--muted);
+      max-width: 620px;
+      margin-bottom: 10px;
+    }
+    .exp-math {
+      font-size: 0.88rem;
+      color: var(--muted);
+      font-style: italic;
+      margin-top: 4px;
+    }
+
+    .exp-container {
+      max-width: var(--max-w);
+      margin: 0 auto;
+      padding-bottom: 80px;
+    }
+
+    /* ── experiment blocks ─────────────────────────────────────────────── */
+    .exp-block {
+      border-top: 1px solid #e0e0e0;
+      padding-top: 48px;
+      margin-bottom: 64px;
+    }
+    .exp-label {
+      font-size: 10.5px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--light);
+      margin-bottom: 6px;
+    }
+    .exp-title {
+      font-size: 1.6rem;
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+    .exp-desc {
+      color: var(--muted);
+      max-width: 640px;
+      margin-bottom: 20px;
+      font-size: 0.97rem;
+    }
+
+    /* ── controls ──────────────────────────────────────────────────────── */
+    .exp-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 18px;
+      align-items: center;
+    }
+    .ctrl-btn {
+      font-family: inherit;
+      font-size: 13px;
+      padding: 6px 14px;
+      border: 1px solid #d0d0d0;
+      border-radius: 999px;
+      background: #fff;
+      color: var(--text);
+      cursor: pointer;
+      letter-spacing: 0.04em;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .ctrl-btn:hover {
+      border-color: #aaa;
+      background: #fafafa;
+    }
+    .ctrl-btn.active {
+      border-color: var(--text);
+      background: var(--text);
+      color: #fff;
+    }
+    .ctrl-sep {
+      width: 1px;
+      height: 20px;
+      background: #e0e0e0;
+    }
+    .ctrl-stat {
+      font-size: 12px;
+      color: var(--muted);
+      letter-spacing: 0.02em;
+    }
+
+    /* ── canvas ────────────────────────────────────────────────────────── */
+    .exp-canvas-wrap {
+      position: relative;
+      line-height: 0;
+      border: 1px solid #e4e4e4;
+      border-radius: 6px;
+      overflow: hidden;
+      background: #000;
+    }
+    canvas.exp-canvas {
+      display: block;
+      image-rendering: pixelated;
+      width: 100%;
+    }
+    .exp-overlay {
+      position: absolute;
+      top: 10px;
+      left: 12px;
+      font-size: 11px;
+      color: rgba(255,255,255,0.55);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      pointer-events: none;
+    }
+
+    /* ── entropy bar ───────────────────────────────────────────────────── */
+    .exp-entropy {
+      margin-top: 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .entropy-track {
+      flex: 1;
+      height: 4px;
+      background: #e8e8e8;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .entropy-fill {
+      height: 100%;
+      background: #1a1a1a;
+      border-radius: 999px;
+      transition: width 0.2s ease;
+    }
+
+    /* ── note box ──────────────────────────────────────────────────────── */
+    .exp-note {
+      margin-top: 18px;
+      padding: 14px 18px;
+      border: 1px solid #e8e8e8;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      color: var(--muted);
+      line-height: 1.6;
+      max-width: 680px;
+    }
+    .exp-note strong { color: var(--text); }
+
+    /* ── Enkidu ────────────────────────────────────────────────────────── */
+    .enkidu-preview {
+      margin-top: 18px;
+      border: 1px solid #e4e4e4;
+      border-radius: 6px;
+      overflow: hidden;
+      max-width: 680px;
+    }
+    .enkidu-preview img {
+      display: block;
+      width: 100%;
+    }
+
+    /* ── Enkidu launch ─────────────────────────────────────────────────── */
+    .enkidu-launch {
+      display: inline-flex;
+      align-items: center;
+      padding: 10px 22px;
+      border: 1px solid var(--text);
+      border-radius: 999px;
+      font-size: 14px;
+      letter-spacing: 0.05em;
+      color: var(--text);
+      text-decoration: none;
+      transition: background 0.15s;
+    }
+    .enkidu-launch:hover {
+      background: var(--text);
+      color: var(--bg);
+    }
+
+    @media (max-width: 680px) {
+      .exp-hero h1 { font-size: 1.8rem; }
+      .exp-title { font-size: 1.3rem; }
+    }
+  </style>
+</head>
+<body>
+
+<nav class="site-nav" aria-label="Site navigation">
+  <details class="nav-mobile-details">
+    <summary class="nav-mobile-summary">
+      <span class="nav-mobile-title">Closure</span>
+      <span class="nav-mobile-toggle">Menu</span>
+    </summary>
+    <div class="nav-mobile-menu">
+      <a href="index.html">Home</a>
+      <a href="stack.html">Where we are</a>
+      <a href="horizon.html">What the future holds</a>
+      <a href="origin.html">How we got here</a>
+      <a href="supporting-models.html">Supporting Models</a>
+      <a class="nav-mobile-accent" href="seeing-code.html">Seeing Code</a>
+      <a class="nav-mobile-accent" aria-current="page" href="experiments.html">Live Experiments</a>
+      <a href="support.html">Support &amp; Collaborate</a>
+      <a href="newsletter.html">Newsletter</a>
+      <a href="about.html">About</a>
+    </div>
+  </details>
+  <div class="nav-left">
+    <a class="nav-home" href="index.html">Closure</a>
+    <span class="nav-sep">/</span>
+    <span class="nav-triad">
+      <a href="stack.html">Where we are</a>
+      <span class="nav-dot">•</span>
+      <a href="horizon.html">What the future holds</a>
+      <span class="nav-dot">•</span>
+      <a href="origin.html">How we got here</a>
+    </span>
+    <span class="nav-sep">/</span>
+    <a href="supporting-models.html">Supporting Models</a>
+  </div>
+  <div class="nav-right">
+    <a class="nav-pill" aria-current="page" href="experiments.html">Live Experiments</a>
+    <span class="nav-dot">•</span>
+    <a class="nav-pill" href="seeing-code.html">Seeing Code</a>
+    <span class="nav-dot">•</span>
+    <a href="support.html">Support &amp; Collaborate</a>
+    <span class="nav-dot">•</span>
+    <a href="newsletter.html">Newsletter</a>
+    <span class="nav-sep">/</span>
+    <a href="about.html">About</a>
+  </div>
+</nav>
+
+<main>
+<div class="exp-hero">
+  <h1>Live Experiments</h1>
+  <p>
+    Two cellular automata running on S³. Every cell is a unit quaternion.
+    Every update is a Hamilton product — four floats in, four floats out, one operation.
+    No weight matrices, no learning rate, no parameters.
+  </p>
+  <p class="exp-math">
+    compose(a, b) = Hamilton product &nbsp;·&nbsp; σ(q) = arccos|w| &nbsp;·&nbsp;
+    ALIVE = [1/√2, 1/√2, 0, 0] at the Hopf equator
+  </p>
+</div>
+
+<div class="exp-container">
+
+  <!-- ══════════════════════════════════════════════════════════════════════
+       GAME OF LIFE
+  ═══════════════════════════════════════════════════════════════════════ -->
+  <div class="exp-block">
+    <div class="exp-label">Experiment 1</div>
+    <div class="exp-title">Conway's Game of Life on S³</div>
+    <div class="exp-desc">
+      Each alive cell is the ALIVE carrier — a unit quaternion on the Hopf equator.
+      The neighborhood rule computes the Hamilton product of all alive-neighbor
+      contributions, then tests the W and X components.
+      Standard Life patterns emerge from one geometric operation.
+    </div>
+
+    <div class="exp-controls" id="gol-controls">
+      <button class="ctrl-btn active" data-pattern="rpentomino">R-pentomino</button>
+      <button class="ctrl-btn" data-pattern="acorn">Acorn</button>
+      <button class="ctrl-btn" data-pattern="gun">Glider gun</button>
+      <button class="ctrl-btn" data-pattern="pulsar">Pulsar</button>
+      <button class="ctrl-btn" data-pattern="fleet">Fleet</button>
+      <button class="ctrl-btn" data-pattern="diehard">Diehard</button>
+      <button class="ctrl-btn" data-pattern="random">Random</button>
+      <button class="ctrl-btn" data-pattern="mandala">Mandala</button>
+      <button class="ctrl-btn" data-pattern="battle">Battle</button>
+      <div class="ctrl-sep"></div>
+      <span class="ctrl-stat" id="gol-stat">gen 0 · alive 0</span>
+    </div>
+
+    <div class="exp-canvas-wrap">
+      <canvas id="gol-canvas" class="exp-canvas"></canvas>
+      <div class="exp-overlay">S³ Game of Life &nbsp;·&nbsp; rule: W&lt;0 ∧ X&gt;0</div>
+    </div>
+
+    <div class="exp-note">
+      <strong>Rule.</strong>
+      For each cell, fold all alive neighbors into a quaternion product starting from IDENTITY.
+      Survive if <em>w ≤ 0 and x &gt; 0</em>. Born if <em>w &lt; 0 and x &gt; 0</em>.
+      Grid wraps toroidally. ALIVE = [1/√2, 1/√2, 0, 0].
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════════
+       GRAY GAME
+  ═══════════════════════════════════════════════════════════════════════ -->
+  <div class="exp-block">
+    <div class="exp-label">Experiment 2</div>
+    <div class="exp-title">The Gray Game — three interference regimes</div>
+    <div class="exp-desc">
+      Each cell holds an arbitrary unit quaternion. Color encodes the rotation axis on S²:
+      red = salience (X), green = total field (Y), blue = unknown (Z).
+      Brightness scales with geodesic distance from identity.
+      Three rules produce three qualitatively different dynamics.
+    </div>
+
+    <div class="exp-controls" id="gg-controls">
+      <button class="ctrl-btn active" data-mode="1">1 · Spectrum</button>
+      <button class="ctrl-btn" data-mode="2">2 · Resonance</button>
+      <button class="ctrl-btn" data-mode="3">3 · Edge</button>
+      <div class="ctrl-sep"></div>
+      <button class="ctrl-btn" id="gg-reseed">Reseed</button>
+      <div class="ctrl-sep"></div>
+      <span class="ctrl-stat" id="gg-stat">gen 0 · alive 0</span>
+    </div>
+
+    <div class="exp-canvas-wrap">
+      <canvas id="gg-canvas" class="exp-canvas"></canvas>
+      <div class="exp-overlay" id="gg-overlay">Spectrum — coherence / integration</div>
+    </div>
+
+    <div class="exp-entropy">
+      <span>H</span>
+      <div class="entropy-track"><div class="entropy-fill" id="gg-entropy-fill" style="width:0%"></div></div>
+      <span id="gg-entropy-val">0.00 bits</span>
+    </div>
+
+    <div class="exp-note">
+      <strong>Mode 1 — Spectrum.</strong>
+      15 random patches seed the grid. Each cell drifts toward its neighborhood mean quaternion
+      (vector-mean → normalize). Entropy decreases. Ends in smooth frequency domains.<br><br>
+      <strong>Mode 2 — Resonance.</strong>
+      6 equatorial primary sectors. Stable cores (coherence &gt; 0.72) integrate via mean.
+      Boundary cells (coherence 0.28–0.72) compose the most-different neighbor pair →
+      one clean resonance event generates a new frequency. Incoherent or overcrowded cells die.
+      Primaries beget secondaries; the color wheel fills in.<br><br>
+      <strong>Mode 3 — Edge.</strong>
+      β = 0.38 blend of mean and full neighbor product. Neither side wins: domains form but
+      never freeze, boundaries churn but never dissolve. The critical point.
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════════
+       ENKIDU-ALIVE
+  ═══════════════════════════════════════════════════════════════════════ -->
+  <div class="exp-block">
+    <div class="exp-label">Experiment 3</div>
+    <div class="exp-title">Enkidu-Alive</div>
+    <div class="exp-desc">
+      An agent driven by two geodesic distances on S³: hunger σ(state, food) and
+      cold σ(state, shelter). Both are deviations from IDENTITY = [1, 0, 0, 0] —
+      when hunger = 0 and cold = 0 the agent is at IDENTITY, and the algebraic
+      identity element is homeostasis. The geometry produces the gradient with no
+      reward function and no learned policy. Whichever σ is larger determines the
+      target; one comparison per tick produces all behavior: foraging trips, direct
+      paths home, hesitation when drives are equal.
+      In Scarce mode, teach him to build shelter and watch a camp network emerge.
+    </div>
+    <a class="enkidu-launch" href="enkidu.html" target="_blank">
+      Open Enkidu-Alive →
+    </a>
+    <div class="enkidu-preview">
+      <img src="enkidu-alive.png" alt="Enkidu-Alive screenshot" />
+    </div>
+  </div>
+
+</div><!-- exp-container -->
+</main>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════════════
+// S³ quaternion primitives
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const IDENTITY = [1, 0, 0, 0];
+const ALIVE    = [1 / Math.SQRT2, 1 / Math.SQRT2, 0, 0];
+const PI       = Math.PI;
+const HALF_PI  = Math.PI / 2;
+const EPS      = 1e-9;
+
+function normalize(q) {
+  const len = Math.sqrt(q[0]*q[0] + q[1]*q[1] + q[2]*q[2] + q[3]*q[3]);
+  if (len < EPS) return [1, 0, 0, 0];
+  return [q[0]/len, q[1]/len, q[2]/len, q[3]/len];
+}
+
+function compose(a, b) {
+  return [
+    a[0]*b[0] - a[1]*b[1] - a[2]*b[2] - a[3]*b[3],
+    a[0]*b[1] + a[1]*b[0] + a[2]*b[3] - a[3]*b[2],
+    a[0]*b[2] - a[1]*b[3] + a[2]*b[0] + a[3]*b[1],
+    a[0]*b[3] + a[1]*b[2] - a[2]*b[1] + a[3]*b[0],
+  ];
+}
+
+function sigma(q) {
+  return Math.acos(Math.min(1, Math.abs(q[0])));
+}
+
+function isAlive(q) {
+  return sigma(q) > EPS;
+}
+
+function dot4(a, b) {
+  return a[0]*b[0] + a[1]*b[1] + a[2]*b[2] + a[3]*b[3];
+}
+
+// Normalized linear interpolation on S³ (NLERP)
+function nlerp(a, b, t) {
+  const flip = dot4(a, b) < 0;
+  const bw = flip ? -b[0] : b[0];
+  const bx = flip ? -b[1] : b[1];
+  const by = flip ? -b[2] : b[2];
+  const bz = flip ? -b[3] : b[3];
+  const s = 1 - t;
+  return normalize([s*a[0]+t*bw, s*a[1]+t*bx, s*a[2]+t*by, s*a[3]+t*bz]);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// LCG for deterministic pseudo-random (matches Rust impl)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function makeLcg(seed) {
+  // Use BigInt to replicate u64 wrapping arithmetic
+  let s = BigInt(seed);
+  const MUL = 6364136223846793005n;
+  const ADD = 1442695040888963407n;
+  const MOD = (1n << 64n);
+  return {
+    next() {
+      s = (s * MUL + ADD) & (MOD - 1n);
+      return Number((s >> 11n) & 0x1FFFFFFFFFFFFFn) / (2 ** 53);
+    }
+  };
+}
+
+function boxMuller(u1, u2) {
+  const r = Math.sqrt(-2 * Math.log(Math.max(u1, 1e-300)));
+  const t = 2 * PI * u2;
+  return [r * Math.cos(t), r * Math.sin(t)];
+}
+
+function uniformS3(lcg) {
+  const [w, x] = boxMuller(lcg.next(), lcg.next());
+  const [y, z] = boxMuller(lcg.next(), lcg.next());
+  return normalize([w, x, y, z]);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Color — carrier RGB (Gray Game)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function carrierRgb(q) {
+  if (!isAlive(q)) return null;
+  const [, x, y, z] = q;
+  const ax = Math.sqrt(x*x + y*y + z*z);
+  let nx, ny, nz;
+  if (ax > EPS) { nx = x/ax; ny = y/ax; nz = z/ax; }
+  else { return [210, 210, 210]; }
+  const br = Math.sqrt(Math.min(1, sigma(q) / HALF_PI));
+  return [
+    Math.round((nx + 1) * 127.5 * br),
+    Math.round((ny + 1) * 127.5 * br),
+    Math.round((nz + 1) * 127.5 * br),
+  ];
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// GAME OF LIFE
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const GOL_CELL_PX = 8;
+
+const golPatterns = {
+  rpentomino(rows, cols) {
+    const g = makeGolGrid(rows, cols);
+    const r = Math.floor(rows/2) - 1, c = Math.floor(cols/2) - 1;
+    [[r,c+1],[r,c+2],[r+1,c],[r+1,c+1],[r+2,c+1]].forEach(([rr,cc]) => { if(rr<rows&&cc<cols) g[rr][cc]=true; });
+    // two gliders
+    [[2,2],[3,3],[4,1],[4,2],[4,3]].forEach(([rr,cc])=>{ if(rr<rows&&cc<cols) g[rr][cc]=true; });
+    [[2,cols-6],[3,cols-5],[4,cols-7],[4,cols-6],[4,cols-5]].forEach(([rr,cc])=>{ if(rr>=0&&cc>=0&&rr<rows&&cc<cols) g[rr][cc]=true; });
+    return g;
+  },
+  acorn(rows, cols) {
+    const g = makeGolGrid(rows, cols);
+    const r = Math.floor(rows/2) - 1, c = Math.floor(cols/2) - 3;
+    [[r,c+1],[r+1,c+3],[r+2,c],[r+2,c+1],[r+2,c+4],[r+2,c+5],[r+2,c+6]]
+      .forEach(([rr,cc])=>{ if(rr<rows&&cc<cols) g[rr][cc]=true; });
+    return g;
+  },
+  gun(rows, cols) {
+    const g = makeGolGrid(rows, cols);
+    const or = Math.floor(rows/2) - 4, oc = Math.max(2, Math.floor(cols/2) - 18);
+    const cells = [
+      [0,24],[1,22],[1,24],[2,12],[2,13],[2,20],[2,21],[2,34],[2,35],
+      [3,11],[3,15],[3,20],[3,21],[3,34],[3,35],[4,0],[4,1],[4,10],[4,16],[4,20],[4,21],
+      [5,0],[5,1],[5,10],[5,14],[5,16],[5,17],[5,22],[5,24],
+      [6,10],[6,16],[6,24],[7,11],[7,15],[8,12],[8,13],
+    ];
+    cells.forEach(([dr,dc])=>{ const rr=or+dr, cc=oc+dc; if(rr>=0&&cc>=0&&rr<rows&&cc<cols) g[rr][cc]=true; });
+    return g;
+  },
+  pulsar(rows, cols) {
+    // Three pulsars side by side — spacing 19, matching Rust's (6,5),(6,24),(6,43) layout.
+    const g = makeGolGrid(rows, cols);
+    const pCells = [
+      [0,2],[0,3],[0,4],[0,8],[0,9],[0,10],
+      [2,0],[2,5],[2,7],[2,12],[3,0],[3,5],[3,7],[3,12],[4,0],[4,5],[4,7],[4,12],
+      [5,2],[5,3],[5,4],[5,8],[5,9],[5,10],
+      [7,2],[7,3],[7,4],[7,8],[7,9],[7,10],
+      [8,0],[8,5],[8,7],[8,12],[9,0],[9,5],[9,7],[9,12],[10,0],[10,5],[10,7],[10,12],
+      [12,2],[12,3],[12,4],[12,8],[12,9],[12,10],
+    ];
+    const place = (or, oc) => pCells.forEach(([dr,dc]) => {
+      const rr=or+dr, cc2=oc+dc;
+      if(rr>=0&&cc2>=0&&rr<rows&&cc2<cols) g[rr][cc2]=1;
+    });
+    const or = Math.max(1, Math.floor(rows/2) - 6);
+    const oc = Math.max(1, Math.floor((cols - 50) / 2));
+    place(or, oc);
+    place(or, oc + 19);
+    place(or, oc + 38);
+    return g;
+  },
+  diehard(rows, cols) {
+    const g = makeGolGrid(rows, cols);
+    const r = Math.floor(rows/2), c = Math.floor(cols/2) - 4;
+    [[r,c+6],[r+1,c],[r+1,c+1],[r+2,c+1],[r+2,c+5],[r+2,c+6],[r+2,c+7]]
+      .forEach(([rr,cc])=>{ if(rr<rows&&cc<cols&&rr>=0&&cc>=0) g[rr][cc]=true; });
+    return g;
+  },
+  fleet(rows, cols) {
+    // 5 LWSSs in V-formation — Rust reference: 40×90 grid, cr=20.
+    const g = makeGolGrid(rows, cols);
+    const cr = Math.floor(rows / 2);
+    const lwss = (r, c) => {
+      [[r,c+1],[r,c+4],[r+1,c],[r+2,c],[r+2,c+4],[r+3,c],[r+3,c+1],[r+3,c+2],[r+3,c+3]]
+        .forEach(([rr,cc])=>{ if(rr>=0&&cc>=0&&rr<rows&&cc<cols) g[rr][cc]=1; });
+    };
+    const cTip   = Math.floor(30 * cols / 90);
+    const cInner = Math.floor(18 * cols / 90);
+    const cOuter = Math.max(0, Math.floor(6 * cols / 90));
+    const roIn   = Math.round(9  * rows / 40);
+    const roOut  = Math.round(16 * rows / 40);
+    lwss(cr - 2,                     cTip);    // tip (rightmost)
+    lwss(cr - roIn,                  cInner);  // inner wing top
+    lwss(cr + Math.round(5*rows/40), cInner);  // inner wing bottom
+    lwss(Math.max(0, cr - roOut),    cOuter);  // outer wing top
+    lwss(Math.min(rows-4, cr + Math.round(12*rows/40)), cOuter); // outer wing bottom
+    return g;
+  },
+  random(rows, cols) {
+    const g = makeGolGrid(rows, cols);
+    const lcg = makeLcg(0xDEADBEEF13374242n);
+    for (let r = 0; r < rows; r++)
+      for (let c = 0; c < cols; c++)
+        g[r][c] = lcg.next() < 0.30;
+    return g;
+  },
+  mandala(rows, cols) {
+    // rows = cols = 128 (set by golStart). Use Rust's exact offsets.
+    const g = makeGolGrid(rows, cols);
+    const acorn = [[-1,-2],[0,0],[1,-3],[1,-2],[1,1],[1,2],[1,3]];
+    const cr = Math.floor(rows/2), cc = Math.floor(cols/2);
+    const or = 30, oc = 12;   // Rust's exact values for 128×128
+    // 8 D8 transforms
+    const trs = [[or,oc],[-oc,or],[-or,-oc],[oc,-or],[-or,oc],[or,-oc],[oc,or],[-oc,-or]];
+    trs.forEach(([br, bc], ti) => {
+      acorn.forEach(([pr, pc]) => {
+        let tr, tc;
+        switch(ti) {
+          case 0: tr=pr; tc=pc; break;
+          case 1: tr=-pc; tc=pr; break;
+          case 2: tr=-pr; tc=-pc; break;
+          case 3: tr=pc; tc=-pr; break;
+          case 4: tr=-pr; tc=pc; break;
+          case 5: tr=pr; tc=-pc; break;
+          case 6: tr=pc; tc=pr; break;
+          default: tr=-pc; tc=-pr; break;
+        }
+        const rr = cr + br + tr, cc2 = cc + bc + tc;
+        if (rr >= 0 && cc2 >= 0 && rr < rows && cc2 < cols) g[rr][cc2] = true;
+      });
+    });
+    return g;
+  },
+  battle(rows, cols) {
+    const g = makeGolGrid(rows, cols);
+    const cells = [
+      [0,24],[1,22],[1,24],[2,12],[2,13],[2,20],[2,21],[2,34],[2,35],
+      [3,11],[3,15],[3,20],[3,21],[3,34],[3,35],[4,0],[4,1],[4,10],[4,16],[4,20],[4,21],
+      [5,0],[5,1],[5,10],[5,14],[5,16],[5,17],[5,22],[5,24],
+      [6,10],[6,16],[6,24],[7,11],[7,15],[8,12],[8,13],
+    ];
+    const maxDr = 8, maxDc = 35;
+    // For glider streams to collide, both guns must be on the same anti-diagonal:
+    //   Gun A exit: (ar+5, ac+22)  →  r+c = ar+ac+27
+    //   Gun B exit: (br+3, bc+13)  →  r+c = br+bc+16
+    // Constraint: ar+ac+27 = br+bc+16  →  bc = ar+ac-br+11
+    // Rust satisfies this exactly: 3+55-38+11 = 31 = bc. We must too.
+    // Guns at opposite corners — they fire at each other across the diagonal.
+    const ar = 2, ac = 2;
+    cells.forEach(([dr,dc])=>{ const rr=ar+dr, cc=ac+dc; if(rr>=0&&cc>=0&&rr<rows&&cc<cols) g[rr][cc]=true; });
+    const br = rows - maxDr - 2, bc = cols - maxDc - 2;
+    cells.forEach(([dr,dc])=>{ const rr=br+(maxDr-dr), cc=bc+(maxDc-dc); if(rr>=0&&cc>=0&&rr<rows&&cc<cols) g[rr][cc]=true; });
+    return g;
+  },
+};
+
+function makeGolGrid(rows, cols) {
+  return Array.from({length: rows}, () => new Uint8Array(cols));
+}
+
+function golNeighborProduct(grid, rows, cols, row, col) {
+  let p = [...IDENTITY];
+  for (let dr = -1; dr <= 1; dr++) {
+    for (let dc = -1; dc <= 1; dc++) {
+      if (dr === 0 && dc === 0) continue;
+      const nr = ((row + dr) % rows + rows) % rows;
+      const nc = ((col + dc) % cols + cols) % cols;
+      if (grid[nr][nc]) p = compose(p, ALIVE);
+    }
+  }
+  return p;
+}
+
+function golStep(grid, rows, cols) {
+  const next = makeGolGrid(rows, cols);
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const p = golNeighborProduct(grid, rows, cols, r, c);
+      next[r][c] = grid[r][c]
+        ? (p[0] < EPS && p[1] > EPS ? 1 : 0)      // survive
+        : (p[0] < -EPS && p[1] > EPS ? 1 : 0);    // born
+    }
+  }
+  return next;
+}
+
+// ── GoL renderer ─────────────────────────────────────────────────────────────
+
+const golCanvas = document.getElementById('gol-canvas');
+const golCtx    = golCanvas.getContext('2d');
+let golGrid, golRows, golCols, golGen = 0, golRunning = false, golRaf;
+let golCellPx = GOL_CELL_PX;  // changes per pattern (mandala uses 5px for square grid)
+
+function golDraw() {
+  const px = golCellPx;
+  golCtx.fillStyle = '#111';
+  golCtx.fillRect(0, 0, golCanvas.width, golCanvas.height);
+  golCtx.fillStyle = '#e8c84a';
+  let alive = 0;
+  for (let r = 0; r < golRows; r++) {
+    for (let c = 0; c < golCols; c++) {
+      if (golGrid[r][c]) {
+        alive++;
+        golCtx.fillRect(c * px + 1, r * px + 1, px - 2, px - 2);
+      }
+    }
+  }
+  document.getElementById('gol-stat').textContent = `gen ${golGen} · alive ${alive}`;
+}
+
+function golTick() {
+  golGrid = golStep(golGrid, golRows, golCols);
+  golGen++;
+  golDraw();
+  golRaf = requestAnimationFrame(() => setTimeout(() => { if(golRunning) golTick(); }, 80));
+}
+
+function golStart(patternName) {
+  if (golRaf) cancelAnimationFrame(golRaf);
+  golRunning = false;
+  golGen = 0;
+
+  const w = golCanvas.parentElement.clientWidth;
+  // Mandala: exactly 128×128 (Rust reference), cell size fills the container width.
+  if (patternName === 'mandala') {
+    golCols = 128;
+    golRows = 128;
+    golCellPx = Math.max(4, Math.floor(w / 128));
+  } else {
+    golCellPx = GOL_CELL_PX;
+    golCols = Math.floor(w / GOL_CELL_PX);
+    golRows = Math.floor(golCols * 0.45);
+  }
+  golCanvas.width  = golCols * golCellPx;
+  golCanvas.height = golRows * golCellPx;
+  golCanvas.style.height = (golRows * golCellPx) + 'px';
+
+  const fn = golPatterns[patternName] || golPatterns.rpentomino;
+  golGrid = fn(golRows, golCols);
+  golDraw();
+  golRunning = true;
+  golRaf = requestAnimationFrame(() => setTimeout(golTick, 100));
+}
+
+// Controls
+document.getElementById('gol-controls').addEventListener('click', e => {
+  const btn = e.target.closest('[data-pattern]');
+  if (!btn) return;
+  document.querySelectorAll('#gol-controls [data-pattern]').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  golStart(btn.dataset.pattern);
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// GRAY GAME
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const GG_ROWS = 60;
+const GG_COLS = 120;
+const GG_CELL_PX = 6;
+
+// Mode thresholds (match Rust source exactly)
+const M1_BIRTH_COH = 0.52, M1_SURV_COH = 0.28, M1_MIN = 2;
+const M2_STABLE_COH = 0.72, M2_DEAD_COH = 0.28, M2_MIN = 2, M2_MAX = 6;
+const M3_BETA = 0.38, M3_BIRTH_COH = 0.42, M3_SURV_COH = 0.22, M3_MIN = 2, M3_MAX = 7;
+const H_MAX_BITS = Math.log2(GG_ROWS * GG_COLS);
+
+// Each cell: Float32Array of length 4
+function makeGgGrid() {
+  const g = [];
+  for (let r = 0; r < GG_ROWS; r++) {
+    const row = [];
+    for (let c = 0; c < GG_COLS; c++) row.push([1, 0, 0, 0]);
+    g.push(row);
+  }
+  return g;
+}
+
+function ggCollectNeighbors(grid, r, c) {
+  const nbrs = [];
+  let s0 = 0, s1 = 0, s2 = 0, s3 = 0;
+  for (let dr = -1; dr <= 1; dr++) {
+    for (let dc = -1; dc <= 1; dc++) {
+      if (dr === 0 && dc === 0) continue;
+      const nr = ((r + dr) % GG_ROWS + GG_ROWS) % GG_ROWS;
+      const nc = ((c + dc) % GG_COLS + GG_COLS) % GG_COLS;
+      const q = grid[nr][nc];
+      if (isAlive(q)) {
+        s0 += q[0]; s1 += q[1]; s2 += q[2]; s3 += q[3];
+        nbrs.push(q);
+      }
+    }
+  }
+  const len = Math.sqrt(s0*s0 + s1*s1 + s2*s2 + s3*s3);
+  const n = nbrs.length;
+  const coh = n === 0 ? 0 : len / n;
+  return { nbrs, sum: [s0, s1, s2, s3], coh };
+}
+
+function normalizeSum(sum) {
+  const len = Math.sqrt(sum[0]*sum[0] + sum[1]*sum[1] + sum[2]*sum[2] + sum[3]*sum[3]);
+  if (len < EPS) return null;
+  return [sum[0]/len, sum[1]/len, sum[2]/len, sum[3]/len];
+}
+
+function mostDifferentPair(nbrs) {
+  if (nbrs.length < 2) return null;
+  let best = Infinity, pair = null;
+  for (let i = 0; i < nbrs.length; i++) {
+    for (let j = i + 1; j < nbrs.length; j++) {
+      const d = dot4(nbrs[i], nbrs[j]);
+      if (d < best) { best = d; pair = [nbrs[i], nbrs[j]]; }
+    }
+  }
+  return pair;
+}
+
+function hamiltonAll(nbrs) {
+  return nbrs.reduce((acc, q) => compose(acc, q), [...IDENTITY]);
+}
+
+function ggStepSpectrum(grid) {
+  const next = makeGgGrid();
+  for (let r = 0; r < GG_ROWS; r++) {
+    for (let c = 0; c < GG_COLS; c++) {
+      const { nbrs, sum, coh } = ggCollectNeighbors(grid, r, c);
+      if (nbrs.length < M1_MIN) continue;
+      const alive = isAlive(grid[r][c]);
+      const thresh = alive ? M1_SURV_COH : M1_BIRTH_COH;
+      if (coh >= thresh) {
+        const m = normalizeSum(sum);
+        if (m) next[r][c] = m;
+      }
+    }
+  }
+  return next;
+}
+
+function ggStepResonance(grid) {
+  const next = makeGgGrid();
+  for (let r = 0; r < GG_ROWS; r++) {
+    for (let c = 0; c < GG_COLS; c++) {
+      const { nbrs, sum, coh } = ggCollectNeighbors(grid, r, c);
+      const n = nbrs.length;
+      if (n < M2_MIN || n > M2_MAX) continue;
+      if (coh >= M2_STABLE_COH) {
+        const m = normalizeSum(sum);
+        if (m) next[r][c] = m;
+      } else if (coh >= M2_DEAD_COH) {
+        const pair = mostDifferentPair(nbrs);
+        if (pair) {
+          const p = normalize(compose(pair[0], pair[1]));
+          if (isAlive(p)) next[r][c] = p;
+          else { const m = normalizeSum(sum); if (m) next[r][c] = m; }
+        }
+      }
+    }
+  }
+  return next;
+}
+
+function ggStepEdge(grid) {
+  const next = makeGgGrid();
+  for (let r = 0; r < GG_ROWS; r++) {
+    for (let c = 0; c < GG_COLS; c++) {
+      const { nbrs, sum, coh } = ggCollectNeighbors(grid, r, c);
+      const n = nbrs.length;
+      if (n < M3_MIN || n > M3_MAX) continue;
+      const alive = isAlive(grid[r][c]);
+      const thresh = alive ? M3_SURV_COH : M3_BIRTH_COH;
+      if (coh < thresh) continue;
+      const mean = normalizeSum(sum);
+      if (!mean) continue;
+      const prod = normalize(hamiltonAll(nbrs));
+      next[r][c] = isAlive(prod) ? nlerp(mean, prod, M3_BETA) : mean;
+    }
+  }
+  return next;
+}
+
+// ── Seeding ───────────────────────────────────────────────────────────────────
+
+function ggSeedSpectrum(seedVal) {
+  const lcg = makeLcg(seedVal);
+  const grid = makeGgGrid();
+  const PR = 3, PC = 5;
+  const quats = Array.from({length: PR*PC}, () => uniformS3(lcg));
+  const ph = Math.floor(GG_ROWS / PR), pw = Math.floor(GG_COLS / PC);
+  for (let r = 0; r < GG_ROWS; r++) {
+    for (let c = 0; c < GG_COLS; c++) {
+      if (lcg.next() >= 0.70) continue;
+      const pr = Math.min(Math.floor(r / ph), PR - 1);
+      const pc = Math.min(Math.floor(c / pw), PC - 1);
+      grid[r][c] = quats[pr * PC + pc];
+    }
+  }
+  return grid;
+}
+
+function ggSeedSectors(n, density, seedVal) {
+  const lcg = makeLcg(seedVal);
+  const grid = makeGgGrid();
+  const offset = lcg.next() * 2 * PI;
+  const primaries = Array.from({length: n}, (_, i) => {
+    const t = offset + i * 2 * PI / n;
+    return [0, Math.cos(t), Math.sin(t), 0];
+  });
+  const cr = GG_ROWS / 2, cc = GG_COLS / 2;
+  for (let r = 0; r < GG_ROWS; r++) {
+    for (let c = 0; c < GG_COLS; c++) {
+      if (lcg.next() >= density) continue;
+      const angle = ((Math.atan2(r - cr, c - cc) % (2*PI)) + 2*PI) % (2*PI);
+      const sector = Math.floor(angle / (2 * PI / n)) % n;
+      grid[r][c] = primaries[sector];
+    }
+  }
+  return grid;
+}
+
+// ── Entropy ───────────────────────────────────────────────────────────────────
+
+function ggEntropy(grid) {
+  const counts = new Map();
+  let alive = 0;
+  for (let r = 0; r < GG_ROWS; r++) {
+    for (let c = 0; c < GG_COLS; c++) {
+      const q = grid[r][c];
+      if (!isAlive(q)) continue;
+      alive++;
+      const rgb = carrierRgb(q);
+      if (!rgb) continue;
+      // bin to 32 levels per channel
+      const key = (rgb[0] >> 3) * 1024 + (rgb[1] >> 3) * 32 + (rgb[2] >> 3);
+      counts.set(key, (counts.get(key) || 0) + 1);
+    }
+  }
+  if (alive === 0) return { alive: 0, bits: 0, norm: 0 };
+  let H = 0;
+  for (const cnt of counts.values()) {
+    const p = cnt / alive;
+    H -= p * Math.log2(p);
+  }
+  return { alive, bits: H, norm: Math.min(1, H / H_MAX_BITS) };
+}
+
+// ── Render ────────────────────────────────────────────────────────────────────
+
+const ggCanvas  = document.getElementById('gg-canvas');
+const ggCtx     = ggCanvas.getContext('2d');
+
+ggCanvas.width  = GG_COLS * GG_CELL_PX;
+ggCanvas.height = GG_ROWS * GG_CELL_PX;
+
+// Resize canvas to fill container width
+function ggResizeCanvas() {
+  const w = ggCanvas.parentElement.clientWidth;
+  ggCanvas.style.width  = w + 'px';
+  ggCanvas.style.height = Math.round(w * GG_ROWS / GG_COLS) + 'px';
+}
+
+function ggDraw(grid, gen, mode) {
+  const px = GG_CELL_PX;
+  const imgData = ggCtx.createImageData(GG_COLS * px, GG_ROWS * px);
+  const d = imgData.data;
+
+  for (let r = 0; r < GG_ROWS; r++) {
+    for (let c = 0; c < GG_COLS; c++) {
+      const q = grid[r][c];
+      const rgb = carrierRgb(q);
+      const red   = rgb ? rgb[0] : 17;
+      const green = rgb ? rgb[1] : 17;
+      const blue  = rgb ? rgb[2] : 17;
+      // fill px × px block
+      for (let dy = 0; dy < px; dy++) {
+        for (let dx = 0; dx < px; dx++) {
+          const idx = ((r * px + dy) * GG_COLS * px + c * px + dx) * 4;
+          d[idx]   = red;
+          d[idx+1] = green;
+          d[idx+2] = blue;
+          d[idx+3] = 255;
+        }
+      }
+    }
+  }
+  ggCtx.putImageData(imgData, 0, 0);
+
+  const { alive, bits, norm } = ggEntropy(grid);
+  document.getElementById('gg-stat').textContent = `gen ${gen} · alive ${alive}`;
+  document.getElementById('gg-entropy-fill').style.width = (norm * 100).toFixed(1) + '%';
+  document.getElementById('gg-entropy-val').textContent = bits.toFixed(2) + ' bits';
+
+  const labels = ['', 'Spectrum — coherence / integration',
+    'Resonance — pair product at boundaries', 'Edge — β=0.38 blend, critical point'];
+  document.getElementById('gg-overlay').textContent = labels[mode];
+}
+
+// ── Loop ──────────────────────────────────────────────────────────────────────
+
+let ggGrid, ggMode = 1, ggGen = 0, ggRunning = false, ggRaf;
+let ggSeed = 0xDEADBEEF13374242n;
+
+const GG_DELAY = 70; // ms per step
+
+function ggRebuild() {
+  ggGen = 0;
+  if (ggMode === 1) ggGrid = ggSeedSpectrum(ggSeed);
+  else if (ggMode === 2) ggGrid = ggSeedSectors(6, 0.68, ggSeed);
+  else ggGrid = ggSeedSectors(2, 0.42, ggSeed);
+}
+
+function ggTick() {
+  if (!ggRunning) return;
+  if (ggMode === 1) ggGrid = ggStepSpectrum(ggGrid);
+  else if (ggMode === 2) ggGrid = ggStepResonance(ggGrid);
+  else ggGrid = ggStepEdge(ggGrid);
+  ggGen++;
+  ggDraw(ggGrid, ggGen, ggMode);
+
+  // auto-reseed when dead
+  const alive = ggGrid.flat().filter(isAlive).length;
+  if (alive === 0) {
+    ggSeed = (ggSeed * 2862933555777941757n + 3037000493n) & ((1n << 64n) - 1n);
+    ggRebuild();
+  }
+  ggRaf = requestAnimationFrame(() => setTimeout(ggTick, GG_DELAY));
+}
+
+function ggStart() {
+  if (ggRaf) cancelAnimationFrame(ggRaf);
+  ggRunning = false;
+  ggRebuild();
+  ggDraw(ggGrid, ggGen, ggMode);
+  ggRunning = true;
+  ggRaf = requestAnimationFrame(() => setTimeout(ggTick, 100));
+}
+
+// Controls
+document.getElementById('gg-controls').addEventListener('click', e => {
+  const btn = e.target.closest('[data-mode]');
+  if (btn) {
+    document.querySelectorAll('#gg-controls [data-mode]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    ggMode = parseInt(btn.dataset.mode);
+    ggStart();
+    return;
+  }
+  if (e.target.id === 'gg-reseed') {
+    ggSeed = (ggSeed * 2862933555777941757n + 3037000493n) & ((1n << 64n) - 1n);
+    ggStart();
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Init
+// ═══════════════════════════════════════════════════════════════════════════════
+
+window.addEventListener('load', () => {
+  golStart('rpentomino');
+  ggResizeCanvas();
+  ggStart();
+});
+
+window.addEventListener('resize', () => {
+  ggResizeCanvas();
+});
+</script>
+
+</body>
+</html>

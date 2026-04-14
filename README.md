@@ -16,6 +16,8 @@
 
 **You want a complete digital brain on one manifold?** — perception, memory, learning, attention, consolidation, affect, and self-observation from a single arithmetic operation. Turing-complete, one-pass learning, every threshold derived from topology. → [closure_ea](closure_ea/) | [Paper](closure_ea/docs/GeometricComputer.pdf) | [Zenodo](https://zenodo.org/records/19578024)
 
+**You want to see the geometry in action?** — Conway's GoL on S³, the Gray Game (three interference modes including the edge regime at the BKT critical point), and Enkidu-Alive, all running live in the browser. → [**Experiments**](https://faltz009.github.io/Closure-SDK/experiments.html)
+
 ## What is this
 
 A primitive data structure, in the same sense that a stack, a queue, or a blockchain is a primitive data structure. A stack is LIFO; a queue is FIFO; a hash map is key-value; a blockchain is a hash chain. This one composes ordered data on S³ — the 3-sphere of unit quaternions, which is the richest space where sequential composition is still associative. The structure follows from two axioms and Hurwitz's theorem, and every other ordered structure projects from it.
@@ -252,6 +254,7 @@ This is a building block — you embed it in the systems you already run. If you
 | `closure_dna/` | `pip install closure-dna` — the database package, with its own tests, benchmarks, and demo |
 | `closure_cli/` | CLI surface included in the SDK build |
 | `closure_ea/` | The Geometric Computer — a complete digital brain on S³. Rust crate. [Paper](closure_ea/docs/GeometricComputer.pdf) · [Zenodo](https://zenodo.org/records/19578024) |
+| `docs/experiments.html` | Browser experiments — GoL on S³, Gray Game, Enkidu-Alive. [Live](https://faltz009.github.io/Closure-SDK/experiments.html) |
 | `closure_rs/` | Shared Python bindings for the Rust engine |
 | `rust/` | Shared Rust core |
 | `tests/` | Root guardrails for the workspace |
