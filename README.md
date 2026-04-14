@@ -1,6 +1,3 @@
-
-######NEW MODULE CURRENTLY A WORK IN PROGRESS ---
-
 # Closure SDK
 
 ![Enkidu Alive](Enkidu-alive.png)
@@ -17,7 +14,7 @@
 
 **You want to watch an agent forage, build shelter, and survive through pure algebra?** — zero neural network, zero learned parameters, zero training. The geometry of S³ computes attention directly: compose, measure distance from identity, act on the largest. → [**Try it live**](https://faltz009.github.io/Closure-SDK/) | [Source](closure_ea/enkidu_alive/)
 
-**You want to build AGI? In your room?** — the geometry is S³, the architecture is an 18-step spec, steps 1-3b are validated with 1,031 parameters and a zero-parameter behavioral agent. Check → [Closure Ea](closure_ea/)
+**You want a complete digital brain on one manifold?** — perception, memory, learning, attention, consolidation, affect, and self-observation from a single arithmetic operation. Turing-complete, one-pass learning, every threshold derived from topology. → [closure_ea](closure_ea/) | [Paper](closure_ea/docs/GeometricComputer.pdf) | [Zenodo](https://zenodo.org/records/19578024)
 
 ## What is this
 
@@ -252,15 +249,16 @@ This is a building block — you embed it in the systems you already run. If you
 | Path | What it is |
 |---|---|
 | `closure_sdk/` | `pip install closure-sdk` — the SDK package, with its own `pyproject.toml` and tests |
-| `closure_ea/dna/` | `pip install closure-dna` — the database package, with its own tests, benchmarks, and demo |
+| `closure_dna/` | `pip install closure-dna` — the database package, with its own tests, benchmarks, and demo |
 | `closure_cli/` | CLI surface included in the SDK build |
-| `closure_ea/` | `pip install closure-ea` — the learning/runtime package, with its own tests |
+| `closure_ea/` | The Geometric Computer — a complete digital brain on S³. Rust crate. [Paper](closure_ea/docs/GeometricComputer.pdf) · [Zenodo](https://zenodo.org/records/19578024) |
 | `closure_rs/` | Shared Python bindings for the Rust engine |
 | `rust/` | Shared Rust core |
 | `tests/` | Root guardrails for the workspace |
 | `CLOSURE_SDK.md` | Full technical documentation — theory, architecture, complete API reference |
 | `CLOSURE_CLI.md` | CLI documentation — all three commands, options, output formats, architecture |
-| `zeroth_law_full-1.pdf` | The paper — [Zenodo](https://zenodo.org/records/19140055) |
+| `zeroth_law_full-1.pdf` | The Zeroth Law — [Zenodo](https://zenodo.org/records/19140055) |
+| `closure_ea/docs/GeometricComputer.pdf` | A Geometric Computer — [Zenodo](https://zenodo.org/records/19578024) |
 
 ## Architecture
 
@@ -298,8 +296,10 @@ These are theorems, not heuristics. Full proofs are in `CLOSURE_SDK.md`. The fou
 ```bash
 pytest tests -q
 pytest closure_sdk/tests -q
-pytest closure_ea/dna/tests -q
-pytest closure_ea/tests -q
+pytest closure_dna/tests -q
+
+# closure_ea (Rust)
+cargo test --release --manifest-path closure_ea/Cargo.toml
 ```
 
 ## Support

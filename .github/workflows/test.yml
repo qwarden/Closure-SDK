@@ -49,6 +49,6 @@ jobs:
         if: matrix.python-version == '3.13'
         run: |
           source .venv/bin/activate
-          pytest --cov=closure_sdk --cov=closure_ea.dna --cov-report=term-missing -q
+          pytest --cov=closure_sdk --cov=closure_dna --cov-report=term-missing -q
         env:
           PYTHONNOUSERSITE: "1"

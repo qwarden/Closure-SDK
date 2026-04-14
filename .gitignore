@@ -59,20 +59,33 @@
 !closure_cli/reader.py
 !closure_cli/seeker.py
 
-# ─── closure_ea (computer umbrella: dna + vm + demos) ───────────────
+# ─── closure_ea (computer umbrella: docs + src + demos) ─────────────
 !closure_ea/
 !closure_ea/README.md
 !closure_ea/__init__.py
 !closure_ea/__main__.py
-!closure_ea/dna/
-!closure_ea/dna/**
-!closure_ea/vm/
-!closure_ea/vm/**
-!closure_ea/enkidu_alive/
-!closure_ea/enkidu_alive/**
+!closure_ea/Cargo.toml
+!closure_ea/Cargo.lock
+!closure_ea/docs/
+!closure_ea/docs/**
+!closure_ea/src/
+!closure_ea/src/**
+!closure_ea/demos/
+!closure_ea/demos/**
 !closure_ea/archive/
-!closure_ea/archive/legacy_runtime/
-!closure_ea/archive/legacy_runtime/**
+!closure_ea/archive/**
+closure_ea/**/__pycache__/
+closure_ea/target/
+closure_ea/target/**
+
+# ─── closure_dna (standalone database package) ──────────────────────
+!closure_dna/
+!closure_dna/**
+closure_dna/demo/databases/
+closure_dna/demo/databases/**
+!closure_dna/demo/databases/.gitkeep
+closure_dna/**/__pycache__/
+closure_dna/demo/databases/**/*.lock
 
 # ─── Tests (root-level SDK tests) ───────────────────────────────────
 !tests/

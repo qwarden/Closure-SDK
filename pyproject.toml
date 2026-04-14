@@ -42,6 +42,7 @@ Documentation = "https://github.com/faltz009/Closure-SDK/blob/main/CLOSURE_SDK.m
 
 [project.scripts]
 closure = "closure_cli.__main__:main"
+closure-dna = "closure_dna.__main__:main"
 
 [project.optional-dependencies]
 dev = ["pytest>=7.0"]
@@ -53,11 +54,11 @@ build-backend = "maturin"
 [tool.maturin]
 manifest-path = "rust/Cargo.toml"
 features = ["pyo3/extension-module"]
-python-packages = ["closure_sdk", "closure_cli", "closure_rs", "closure_ea"]
+python-packages = ["closure_sdk", "closure_cli", "closure_rs", "closure_ea", "closure_dna"]
 
 [tool.pytest.ini_options]
 testpaths = [
     "tests",
     "closure_sdk/tests",
-    "closure_ea/dna/tests",
+    "closure_dna/tests",
 ]

@@ -27,10 +27,10 @@ pub mod hierarchy;
 pub mod path;
 pub mod resonance;
 
-// DNA engine — lives in closure_ea/dna/rust/src/
-#[path = "../../closure_ea/dna/rust/src/composition_tree.rs"]
+// DNA engine — canonical source lives in closure_dna/rust/src/
+#[path = "../../closure_dna/rust/src/composition_tree.rs"]
 pub mod composition_tree;
-#[path = "../../closure_ea/dna/rust/src/table.rs"]
+#[path = "../../closure_dna/rust/src/table.rs"]
 pub mod table;
 
 mod pyo3_bindings;

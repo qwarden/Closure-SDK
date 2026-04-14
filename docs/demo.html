@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Demo — Closure</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    body.has-ribbon main { padding: 0; overflow: hidden; }
+    body { --max-w: 1440px; }
+
+    .hz-wrapper {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      height: 900px;
+    }
+    .hz-slides {
+      overflow-y: scroll;
+      scroll-snap-type: y mandatory;
+      height: 100%;
+      border-right: 1px solid #e8e8e8;
+    }
+    .hz-slide {
+      height: 900px;
+      scroll-snap-align: start;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 3rem 4rem;
+    }
+    .hz-slide h2 { font-size: 1.45rem; margin-bottom: 0.7em; }
+    .hz-slide p  { margin-bottom: 0.85em; color: #333; }
+    .hz-slide p:last-child { margin-bottom: 0; }
+    .hz-slide .act-label {
+      font-size: 11px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #aaa;
+      margin-bottom: 1.2em;
+    }
+    .hz-slide code {
+      font-family: 'Courier New', monospace;
+      font-size: 0.88em;
+      background: #f5f5f5;
+      padding: 1px 5px;
+      border-radius: 3px;
+    }
+
+    .hz-canvas-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #fafafa;
+      padding: 2rem;
+      gap: 16px;
+    }
+    #demo-canvas {
+      display: block;
+      width: min(80%, 420px);
+      height: min(80%, 420px);
+      aspect-ratio: 1;
+    }
+    .hz-dots {
+      display: flex;
+      gap: 7px;
+    }
+    .scene-dot {
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: #ccc;
+      transition: background .3s, transform .3s;
+    }
+    .scene-dot.active { background: #1a1a1a; transform: scale(1.6); }
+
+    @media (max-width: 740px) {
+      body.has-ribbon main { overflow: auto; }
+      .hz-wrapper { display: block; height: auto; padding-top: 48vw; }
+      .hz-canvas-col {
+        position: fixed;
+        top: 0; left: 0; right: 0;
+        height: 48vw;
+        z-index: 5;
+        background: #fafafa;
+        padding-top: 54px;
+        padding-bottom: 0.25rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+      }
+      #demo-canvas { width: min(36vw, 180px); height: min(36vw, 180px); }
+      .hz-dots { display: none; }
+      .hz-slides { height: auto; overflow-y: visible; scroll-snap-type: none; border-right: none; }
+      .hz-slide { height: auto; min-height: 80vh; padding: 2rem 1.5rem; }
+      .site-nav { position: sticky; }
+    }
+  </style>
+</head>
+<body class="has-ribbon">
+
+<div id="ribbon-bg"></div>
+
+<nav class="site-nav" aria-label="Site navigation">
+  <details class="nav-mobile-details">
+    <summary class="nav-mobile-summary">
+      <span class="nav-mobile-title">Closure</span>
+      <span class="nav-mobile-toggle">Menu</span>
+    </summary>
+    <div class="nav-mobile-menu">
+      <a href="index.html">Home</a>
+      <a href="stack.html">Where we are</a>
+      <a href="horizon.html">What the future holds</a>
+      <a href="origin.html">How we got here</a>
+      <a href="supporting-models.html">Supporting Models</a>
+      <a class="nav-mobile-accent" href="seeing-code.html">Seeing Code</a>
+      <a href="support.html">Support &amp; Collaborate</a>
+      <a href="newsletter.html">Newsletter</a>
+      <a href="about.html">About</a>
+    </div>
+  </details>
+  <div class="nav-left">
+    <a class="nav-home" href="index.html">Closure</a>
+    <span class="nav-sep">/</span>
+    <span class="nav-triad">
+      <a href="stack.html">Where we are</a>
+      <span class="nav-dot">•</span>
+      <a href="horizon.html">What the future holds</a>
+      <span class="nav-dot">•</span>
+      <a aria-current="page" href="demo.html">The Demo</a>
+    </span>
+  </div>
+  <div class="nav-right">
+    <a class="nav-pill" href="seeing-code.html">Seeing Code</a>
+    <span class="nav-dot">•</span>
+    <a href="support.html">Support &amp; Collaborate</a>
+    <span class="nav-dot">•</span>
+    <a href="newsletter.html">Newsletter</a>
+    <span class="nav-sep">/</span>
+    <a href="about.html">About</a>
+  </div>
+</nav>
+
+<main>
+<div class="hz-wrapper">
+
+  <div class="hz-slides" id="hz-slides">
+
+    <!-- Act I -->
+    <section class="hz-slide" data-scene="0">
+      <div class="act-label">Act I</div>
+      <h2>Algebra and geometry are the same thing.</h2>
+      <p>
+        We have always drawn a line between algebra — symbols, rules, manipulation
+        — and geometry — shapes, space, movement. Descartes gave us coordinates
+        in 1637 and that line seemed permanent: numbers live on axes, equations
+        live on paper.
+      </p>
+      <p>
+        This computer erases that line. In this architecture, the number 3 is a
+        position on a sphere. The number 4 is a different position. Addition is
+        movement: start at 3, take 4 more steps, arrive somewhere. That somewhere
+        is 7. The equal sign in 3+4=7 does not mean two expressions describe the
+        same quantity — it means the process of taking those steps, and then
+        undoing them, returns you to where you started. Equality is a return.
+        A closure.
+      </p>
+      <p>
+        The machine runs on the geometry of the sphere, and the arithmetic is
+        what that geometry produces — exactly, because the sphere has always
+        been what arithmetic was running on. We built the computer that makes
+        that visible.
+      </p>
+    </section>
+
+    <!-- Act II -->
+    <section class="hz-slide" data-scene="1">
+      <div class="act-label">Act II</div>
+      <h2>Four fields were measuring the same thing. They didn't know it.</h2>
+      <p>
+        In 1948 Shannon noticed that thermodynamic entropy and minimum description
+        length — developed in entirely separate fields — were the same mathematical
+        function. He named it entropy, and information theory became a field.
+        The recognition that two independent measurements were identical was
+        the founding act.
+      </p>
+      <p>
+        This computer contains a measurement called σ: the distance from the
+        ground state on the sphere, zero when everything is correct, larger when
+        something has deviated. It appeared first in the arithmetic. Then it
+        appeared in three other places that had no reason to be connected.
+      </p>
+      <p>
+        <strong>Neuroscience.</strong> Friston's free energy principle — the
+        leading mathematical theory of how the brain works — says the brain
+        continuously minimizes surprise. Under the natural probability
+        distribution on a sphere, that surprise is σ.
+      </p>
+      <p>
+        <strong>Number theory.</strong> The Riemann Hypothesis — 165 years old,
+        a million-dollar prize, the deepest unsolved problem in mathematics —
+        concerns where the zeros of the zeta function live. That location
+        corresponds to σ = π/4 on the running product of primes.
+      </p>
+      <p>
+        <strong>Information theory.</strong> Shannon's entropy is the flat-space
+        version of σ. Shannon found the entropy of information. σ is the entropy
+        of geometry.
+      </p>
+      <p>
+        These were derived independently, across different papers, by researchers
+        who did not know they were measuring the same thing. The implementation
+        found them.
+      </p>
+    </section>
+
+    <!-- Act III -->
+    <section class="hz-slide" data-scene="2">
+      <div class="act-label">Act III</div>
+      <h2>The machine that computes is the machine that learns.</h2>
+      <p>
+        Every AI system built in the last decade has a training phase and a
+        deployment phase. They are separate because in a conventional computer,
+        memory and computation are separate things — the architecture forces a
+        gap between the system that builds knowledge and the system that uses it.
+      </p>
+      <p>
+        In this architecture there is no gap. When the brain observes a sequence
+        and that sequence closes — returns to where it started — the geometry
+        records what happened. Connections form between positions, and those
+        connections are the knowledge. The brain that saw the sequence is now
+        different from the brain that hadn't. That difference is the learning.
+      </p>
+      <p>
+        Show it a sequence once. Ask it to continue from any point. It does,
+        exactly, because it watched the sequence close and the closure told it
+        everything. This is a different thing from gradient descent: observation
+        and learning as one operation, indistinguishable from each other,
+        because in this geometry they always were.
+      </p>
+    </section>
+
+  </div>
+
+  <div class="hz-canvas-col">
+    <canvas id="demo-canvas"></canvas>
+    <div class="hz-dots" id="hz-dots">
+      <div class="scene-dot active"></div>
+      <div class="scene-dot"></div>
+      <div class="scene-dot"></div>
+    </div>
+  </div>
+
+</div>
+</main>
+
+<script defer src="ribbon.js"></script>
+<script>
+(function () {
+
+  // ── Closure algebra — exact JS port of the Rust SDK ──────────────────────
+
+  function hamilton(a, b) {
+    return [
+      a[0]*b[0] - a[1]*b[1] - a[2]*b[2] - a[3]*b[3],
+      a[0]*b[1] + a[1]*b[0] + a[2]*b[3] - a[3]*b[2],
+      a[0]*b[2] - a[1]*b[3] + a[2]*b[0] + a[3]*b[1],
+      a[0]*b[3] + a[1]*b[2] - a[2]*b[1] + a[3]*b[0],
+    ];
+  }
+  function qnorm(q) {
+    const l = Math.sqrt(q[0]**2+q[1]**2+q[2]**2+q[3]**2);
+    return l > 1e-15 ? [q[0]/l,q[1]/l,q[2]/l,q[3]/l] : [1,0,0,0];
+  }
+  function compose(a, b)     { return qnorm(hamilton(a, b)); }
+  function inverse(q)        { return [q[0], -q[1], -q[2], -q[3]]; }
+  function sigma(q)          { return Math.acos(Math.min(1, Math.abs(q[0]))); }
+  function sigmaGap(a, b)    { return sigma(compose(a, inverse(b))); }
+
+  // ── Orbit: n=9, ε^k on S³ ────────────────────────────────────────────────
+
+  const N = 9;
+  const slots = [];
+  for (let k = 0; k < N; k++) {
+    const θ = 2 * Math.PI * k / N;
+    slots[k] = [Math.cos(θ), Math.sin(θ), 0, 0];
+  }
+
+  function orbitAdd(a, b) { return (a + b) % N; }
+
+  // ── Canvas setup ──────────────────────────────────────────────────────────
+
+  const canvas = document.getElementById('demo-canvas');
+  const ctx    = canvas.getContext('2d');
+  let W, H, R, CX, CY;
+
+  function resize() {
+    const rect = canvas.parentElement.getBoundingClientRect();
+    const sz   = Math.min(rect.width * 0.8, 420);
+    canvas.width  = sz;
+    canvas.height = sz;
+    canvas.style.width  = sz + 'px';
+    canvas.style.height = sz + 'px';
+    W = H = sz;
+    CX = W / 2; CY = H / 2;
+    R  = W * 0.36;
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  // ── Visual helpers ────────────────────────────────────────────────────────
+
+  function slotPos(k) {
+    const θ = 2 * Math.PI * k / N - Math.PI / 2;
+    return [CX + R * Math.cos(θ), CY + R * Math.sin(θ)];
+  }
+
+  function drawOrbitRing(alpha) {
+    ctx.beginPath();
+    ctx.arc(CX, CY, R, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(180,180,180,${alpha})`;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+  function drawDot(k, color, radius) {
+    const [x, y] = slotPos(k);
+    ctx.beginPath();
+    ctx.arc(x, y, radius, 0, Math.PI * 2);
+    ctx.fillStyle = color;
+    ctx.fill();
+  }
+
+  function drawLabel(k, text, color, offsetMul) {
+    const [x, y] = slotPos(k);
+    const ox = (x - CX) * (offsetMul || 1.28);
+    const oy = (y - CY) * (offsetMul || 1.28);
+    ctx.fillStyle = color || '#888';
+    ctx.font = `${W * 0.032}px Georgia, serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, CX + ox, CY + oy);
+  }
+
+  function drawArc(fromK, toK, color, progress) {
+    // Draw an arc along the orbit circle from fromK to toK (sweeping forward)
+    const startAngle = 2 * Math.PI * fromK / N - Math.PI / 2;
+    let   endAngle   = 2 * Math.PI * toK   / N - Math.PI / 2;
+    let   sweep      = endAngle - startAngle;
+    if (sweep <= 0) sweep += Math.PI * 2;
+    const drawEnd    = startAngle + sweep * progress;
+
+    ctx.beginPath();
+    ctx.arc(CX, CY, R, startAngle, drawEnd);
+    ctx.strokeStyle = color;
+    ctx.lineWidth   = 3;
+    ctx.stroke();
+  }
+
+  function drawEdge(fromK, toK, alpha) {
+    const [x1, y1] = slotPos(fromK);
+    const [x2, y2] = slotPos(toK);
+    // Slightly curved arrow via quadratic bezier through midpoint pushed inward
+    const mx = (x1 + x2) / 2;
+    const my = (y1 + y2) / 2;
+    const dx = mx - CX, dy = my - CY;
+    const len = Math.sqrt(dx*dx + dy*dy) || 1;
+    const cx2 = mx + dx / len * R * 0.25;
+    const cy2 = my + dy / len * R * 0.25;
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.quadraticCurveTo(cx2, cy2, x2, y2);
+    ctx.strokeStyle = `rgba(60,130,200,${alpha})`;
+    ctx.lineWidth   = 1.5;
+    ctx.stroke();
+  }
+
+  // ── Scene state ───────────────────────────────────────────────────────────
+
+  let currentScene = 0;
+  let t = 0; // global animation time in seconds
+
+  // Scene 0 state — only pairs where result is visually recognizable (no wrap-around)
+  const s0pairs  = [[3,4],[1,5],[2,3],[4,2],[1,3]];
+  let   s0pairIdx = 0;
+  let   s0phase   = 0; // 0=highlight inputs, 1=arc, 2=result, 3=pause
+
+  // Scene 1 state
+  let s1probe = 0; // continuously rotating probe index (float)
+
+  // Scene 2 state — bootstrap animation
+  const s2total = N;
+  let   s2visible  = 1;  // how many dots visible (starts at 1 = IDENTITY)
+  let   s2edgesVis = 0;  // how many edges drawn
+  let   s2runner   = 0;  // runner position (float index)
+  let   s2phase    = 0;  // 0=bootstrap, 1=edges, 2=generate
+
+  // ── Draw functions per scene ──────────────────────────────────────────────
+
+  function drawScene0(dt) {
+    ctx.clearRect(0, 0, W, H);
+
+    const phaseDur = [1.0, 0.7, 1.0, 0.4];
+    t += dt;
+    const cycleLen = phaseDur.reduce((a,b) => a+b, 0);
+    const tmod     = t % cycleLen;
+    let acc = 0;
+    for (let i = 0; i < phaseDur.length; i++) {
+      if (tmod < acc + phaseDur[i]) { s0phase = i; break; }
+      acc += phaseDur[i];
+    }
+    const phaseT = (tmod - acc) / phaseDur[s0phase]; // 0→1 within phase
+
+    if (s0phase === 3 && phaseT > 0.8) {
+      s0pairIdx = (s0pairIdx + 1) % s0pairs.length;
+      if (t > cycleLen * (s0pairIdx + 1)) t = 0; // prevent drift
+    }
+
+    const [a, b]  = s0pairs[s0pairIdx];
+    const result  = orbitAdd(a, b);
+    const gap     = sigmaGap(compose(slots[a], slots[b]), slots[result]);
+
+    drawOrbitRing(0.4);
+
+    // All dots neutral
+    for (let k = 0; k < N; k++) drawDot(k, '#ddd', W * 0.018);
+    for (let k = 0; k < N; k++) drawLabel(k, String(k), '#bbb');
+
+    if (s0phase === 0) {
+      // Pulse input slots
+      const pulse = 0.5 + 0.5 * Math.sin(phaseT * Math.PI * 4);
+      drawDot(a, `rgba(60,120,220,${0.6 + 0.4*pulse})`, W * 0.032);
+      drawDot(b, `rgba(60,120,220,${0.6 + 0.4*pulse})`, W * 0.032);
+      drawLabel(a, String(a), '#2255cc');
+      drawLabel(b, String(b), '#2255cc');
+
+    } else if (s0phase === 1) {
+      // Inputs stay lit, arc grows from a toward result
+      drawDot(a, '#2255cc', W * 0.028);
+      drawDot(b, '#2255cc', W * 0.028);
+      drawLabel(a, String(a), '#2255cc');
+      drawLabel(b, String(b), '#2255cc');
+      drawArc(a, result, 'rgba(60,160,80,0.7)', phaseT);
+
+    } else if (s0phase === 2) {
+      // Result lights up, show σ=0
+      drawDot(a, '#aabfee', W * 0.022);
+      drawDot(b, '#aabfee', W * 0.022);
+      const glow = 0.7 + 0.3 * Math.sin(phaseT * Math.PI * 3);
+      drawDot(result, `rgba(30,160,60,${glow})`, W * 0.038);
+      drawLabel(result, String(result), '#1a8c3a');
+      drawLabel(a, String(a), '#7799cc');
+      drawLabel(b, String(b), '#7799cc');
+
+      // equation text
+      ctx.fillStyle = '#222';
+      ctx.font      = `italic ${W * 0.05}px Georgia, serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(`${a} + ${b} = ${result}`, CX, CY - W * 0.07);
+
+      ctx.fillStyle = '#888';
+      ctx.font      = `${W * 0.028}px Georgia, serif`;
+      ctx.fillText(`σ = ${gap.toFixed(10)}`, CX, CY);
+
+    } else {
+      // Brief pause — all neutral
+      for (let k = 0; k < N; k++) drawLabel(k, String(k), '#bbb');
+    }
+  }
+
+  function drawScene1(dt) {
+    ctx.clearRect(0, 0, W, H);
+
+    s1probe += dt * 0.6; // slow rotation
+    const probeK = ((s1probe % N) + N) % N;
+    const probeF = probeK; // float index
+    const probeAngle = 2 * Math.PI * probeF / N - Math.PI / 2;
+    const px = CX + R * Math.cos(probeAngle);
+    const py = CY + R * Math.sin(probeAngle);
+
+    // Hopf equator band — σ = π/4
+    const piOver4 = Math.PI / 4;
+    ctx.beginPath();
+    ctx.arc(CX, CY, R, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(200,120,20,0.10)';
+    ctx.lineWidth   = R * 0.18;
+    ctx.stroke();
+
+    drawOrbitRing(0.3);
+
+    // Dots colored by σ
+    for (let k = 0; k < N; k++) {
+      const s  = sigma(slots[k]);
+      // color: 0→white, π/4→orange, π/2→deep red
+      const t  = s / (Math.PI / 2);
+      const r  = Math.round(255 * Math.min(1, t * 2));
+      const g  = Math.round(200 * Math.max(0, 1 - t));
+      const b  = Math.round(200 * Math.max(0, 1 - t * 1.5));
+      drawDot(k, `rgb(${r},${g},${b})`, W * 0.022);
+      const sText = s.toFixed(2);
+      drawLabel(k, sText, '#888', 1.45);
+    }
+
+    // Slot labels inside dots
+    for (let k = 0; k < N; k++) drawLabel(k, String(k), '#fff', 1.0);
+
+    // IDENTITY label
+    ctx.fillStyle = '#444';
+    ctx.font      = `${W*0.026}px Georgia, serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('σ=0', CX + (slotPos(0)[0]-CX)*0.62, CY + (slotPos(0)[1]-CY)*0.62);
+
+    // Hopf equator label
+    ctx.fillStyle = 'rgba(180,90,10,0.7)';
+    ctx.font      = `${W*0.024}px Georgia, serif`;
+    ctx.fillText('σ = π/4', CX + R * 0.62, CY - R * 0.62);
+
+    // Probe dot and sigma readout
+    const probeQ  = [Math.cos(2*Math.PI*probeF/N), Math.sin(2*Math.PI*probeF/N), 0, 0];
+    const probeSig = sigma(probeQ);
+
+    // Line from center to probe
+    ctx.beginPath();
+    ctx.moveTo(CX, CY);
+    ctx.lineTo(px, py);
+    ctx.strokeStyle = 'rgba(40,40,40,0.25)';
+    ctx.lineWidth   = 1;
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(px, py, W * 0.032, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(40,40,40,0.85)';
+    ctx.fill();
+
+    ctx.fillStyle = '#fff';
+    ctx.font      = `bold ${W*0.028}px Georgia, serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('σ', px, py);
+
+    // Live σ readout
+    ctx.fillStyle = '#333';
+    ctx.font      = `${W*0.038}px Georgia, serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(`σ = ${probeSig.toFixed(4)}`, CX, CY);
+
+    const isBalance = Math.abs(probeSig - piOver4) < 0.12;
+    if (isBalance) {
+      ctx.fillStyle = 'rgba(180,90,10,0.8)';
+      ctx.font      = `italic ${W*0.03}px Georgia, serif`;
+      ctx.fillText('Hopf equator', CX, CY + W * 0.06);
+    }
+  }
+
+  function drawScene2(dt) {
+    ctx.clearRect(0, 0, W, H);
+
+    const bootstrapDur = 3.5;
+    const edgeDur      = 2.0;
+
+    t += dt;
+
+    if (t < bootstrapDur) {
+      s2phase   = 0;
+      s2visible = 1 + Math.floor((t / bootstrapDur) * (N - 1));
+      s2visible = Math.min(s2visible, N);
+    } else if (t < bootstrapDur + edgeDur) {
+      s2phase    = 1;
+      s2visible  = N;
+      s2edgesVis = Math.floor(((t - bootstrapDur) / edgeDur) * (N - 1));
+      s2edgesVis = Math.min(s2edgesVis, N - 1);
+    } else {
+      s2phase    = 2;
+      s2visible  = N;
+      s2edgesVis = N - 1;
+      s2runner  += dt * 1.2; // runner speed
+    }
+
+    drawOrbitRing(s2visible === N ? 0.25 : 0.1);
+
+    // Draw edges
+    for (let k = 0; k < s2edgesVis; k++) {
+      const alpha = 0.4 + 0.3 * ((k + 1) / (N - 1));
+      drawEdge(k, (k + 1) % N, alpha);
+    }
+
+    // Draw dots up to s2visible
+    for (let k = 0; k < s2visible; k++) {
+      const isNew = (k === s2visible - 1 && s2phase === 0);
+      const col   = isNew ? 'rgba(60,140,220,0.9)' : (k === 0 ? '#555' : '#333');
+      const rad   = isNew ? W * 0.038 : W * 0.022;
+      drawDot(k, col, rad);
+      drawLabel(k, String(k), isNew ? '#1a1a1a' : '#aaa');
+    }
+
+    // Runner in generate phase
+    if (s2phase === 2) {
+      const rk   = s2runner % N;
+      const rInt = Math.floor(rk);
+      const frac = rk - rInt;
+      const [x1, y1] = slotPos(rInt);
+      const [x2, y2] = slotPos((rInt + 1) % N);
+      const rx = x1 + (x2 - x1) * frac;
+      const ry = y1 + (y2 - y1) * frac;
+
+      // Glow
+      const grad = ctx.createRadialGradient(rx, ry, 0, rx, ry, W * 0.06);
+      grad.addColorStop(0, 'rgba(60,200,100,0.5)');
+      grad.addColorStop(1, 'rgba(60,200,100,0)');
+      ctx.beginPath();
+      ctx.arc(rx, ry, W * 0.06, 0, Math.PI * 2);
+      ctx.fillStyle = grad;
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.arc(rx, ry, W * 0.026, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(30,160,70,0.95)';
+      ctx.fill();
+    }
+
+    // Status text
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'middle';
+
+    if (s2phase === 0) {
+      ctx.fillStyle = '#555';
+      ctx.font      = `${W*0.032}px Georgia, serif`;
+      ctx.fillText(`bootstrap: ${s2visible} / ${N} entries`, CX, CY);
+      ctx.fillStyle = '#aaa';
+      ctx.font      = `${W*0.025}px Georgia, serif`;
+      ctx.fillText('Law 3 ingest', CX, CY + W * 0.055);
+    } else if (s2phase === 1) {
+      ctx.fillStyle = '#444';
+      ctx.font      = `${W*0.032}px Georgia, serif`;
+      ctx.fillText(`edges: ${s2edgesVis} / ${N-1}`, CX, CY);
+    } else {
+      ctx.fillStyle = '#2a7a40';
+      ctx.font      = `italic ${W*0.03}px Georgia, serif`;
+      ctx.fillText('generate() following edges', CX, CY);
+      ctx.fillStyle = '#888';
+      ctx.font      = `${W*0.024}px Georgia, serif`;
+      ctx.fillText('gap = 0.000000 at each step', CX, CY + W * 0.055);
+    }
+  }
+
+  // ── Scene routing ─────────────────────────────────────────────────────────
+
+  const drawFns = [drawScene0, drawScene1, drawScene2];
+  let   lastTime = null;
+
+  function tick(now) {
+    const dt = lastTime === null ? 0 : Math.min((now - lastTime) / 1000, 0.05);
+    lastTime = now;
+    drawFns[currentScene](dt);
+    requestAnimationFrame(tick);
+  }
+
+  // ── Scroll → scene sync ───────────────────────────────────────────────────
+
+  function resetSceneState(scene) {
+    t = 0;
+    lastTime = null;
+    if (scene === 0) { s0pairIdx = 0; s0phase = 0; }
+    if (scene === 1) { s1probe = 0; }
+    if (scene === 2) { s2visible = 1; s2edgesVis = 0; s2runner = 0; s2phase = 0; }
+  }
+
+  const slides = document.querySelectorAll('.hz-slide');
+  const dots   = document.querySelectorAll('.scene-dot');
+
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting && e.intersectionRatio >= 0.5) {
+        const scene = parseInt(e.target.dataset.scene);
+        if (scene !== currentScene) {
+          currentScene = scene;
+          resetSceneState(scene);
+          dots.forEach((d, i) => d.classList.toggle('active', i === scene));
+        }
+      }
+    });
+  }, { root: document.getElementById('hz-slides'), threshold: 0.5 });
+
+  slides.forEach(s => obs.observe(s));
+
+  requestAnimationFrame(tick);
+
+})();
+</script>
+
+</body>
+</html>

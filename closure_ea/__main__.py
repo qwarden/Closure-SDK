@@ -4,11 +4,13 @@ import sys
 
 
 def main() -> int:
-    print("Closure EA")
-    print("  dna: closure_ea.dna")
-    print("  vm:  closure_ea/vm")
-    print("  demo: closure_ea.enkidu_alive")
-    print("Run DNA CLI with: python -m closure_ea.dna")
+    print("Closure EA — meta-layer geometric computer")
+    print("  docs:   closure_ea/docs")
+    print("  src:    closure_ea/src")
+    print("  demos:  closure_ea/demos")
+    print("Primary law document: closure_ea/docs/LAWS.md")
+    print()
+    print("closure_dna is a separate sibling product (see ../closure_dna).")
     return 0
 
 
