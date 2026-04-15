@@ -91,7 +91,7 @@ use crate::hopf;
 use crate::hopf::{semantic_frame, AddressMode, HopfChannel, SemanticFrame};
 use crate::localization::{localize, localize_balance, localized_excursion_peak};
 use crate::neuromodulation::NeuromodState;
-use crate::sphere::{compose, inverse, sigma, IDENTITY};
+use crate::sphere::{compose, inverse, sample_vmf_s3, sigma, Rng, IDENTITY};
 use crate::verify::{verify, VerificationEvent, SIGMA_BALANCE};
 use serde::{Deserialize, Serialize};
 
@@ -190,6 +190,9 @@ pub struct Step {
     /// Negative when recent updates have been destabilizing the model.
     pub arousal_tone: f64,
     pub coherence_tone: f64,
+    /// Effective von Mises-Fisher κ used for Cell A noise this step.
+    /// `None` if noise is disabled. Lower κ = more exploration.
+    pub noise_kappa: Option<f64>,
 }
 
 /// Runtime consolidation report: structural consolidation plus the pressure
@@ -487,6 +490,23 @@ pub struct ThreeCell {
     /// a session restore gets salience_x = 0 (no learning amplification) until
     /// the next ingest updates it, which is the safe default.
     last_salience_x: f64,
+
+    // ── Solenoidal noise (HHD completion) ────────────────────────────────
+    //
+    // The von Mises-Fisher perturbation that completes the Helmholtz-Hodge
+    // decomposition. Without noise, Cell A is a second gradient — it
+    // accumulates deterministically and converges to local minima. With
+    // noise in the history, the trajectory can hop between basins.
+    //
+    // The BKT phase boundary in the genome acts as the noise filter:
+    // noisy partial products that don't couple with anything real fall
+    // below BKT_THRESHOLD and get pruned. Signal survives; noise dies.
+
+    /// PRNG for solenoidal noise. `None` = deterministic (noise disabled).
+    noise_rng: Option<Rng>,
+    /// Base κ for von Mises-Fisher sampling. Default = 1/BKT_THRESHOLD ≈ 2.08.
+    /// Modulated by neuromodulation tones at each step.
+    noise_base_kappa: f64,
 }
 
 impl ThreeCell {
@@ -556,7 +576,30 @@ impl ThreeCell {
             prev_sfe: None,
             neuromod: NeuromodState::new(buffer_lifetime),
             last_salience_x: 0.0,
+            noise_rng: None,
+            noise_base_kappa: 0.0,
         }
+    }
+
+    /// Enable solenoidal noise on Cell A with the given RNG seed.
+    ///
+    /// `base_kappa` is the resting concentration for the von Mises-Fisher
+    /// distribution. Recommended: `1.0 / BKT_THRESHOLD` ≈ 2.08 — the
+    /// critical noise level where perturbations reach the closure threshold.
+    /// Modulated each step by the neuromodulation tones.
+    pub fn enable_noise(&mut self, seed: u64, base_kappa: f64) {
+        self.noise_rng = Some(Rng::new(seed));
+        self.noise_base_kappa = base_kappa;
+    }
+
+    /// Disable solenoidal noise, returning to deterministic Cell A.
+    pub fn disable_noise(&mut self) {
+        self.noise_rng = None;
+    }
+
+    /// Whether solenoidal noise is active.
+    pub fn noise_enabled(&self) -> bool {
+        self.noise_rng.is_some()
     }
 
     /// Reconstitute a brain from a previously saved genome.
@@ -599,6 +642,8 @@ impl ThreeCell {
             prev_sfe: None,
             neuromod: NeuromodState::new(buffer_lifetime),
             last_salience_x: 0.0,
+            noise_rng: None,
+            noise_base_kappa: 0.0,
         }
     }
 
@@ -1115,8 +1160,34 @@ impl ThreeCell {
         self.cell_a_parity += 1;
 
         let prev_a_sigma = sigma(&self.cell_a);
-        self.cell_a_history.push(*carrier);
-        self.cell_a = compose(&self.cell_a, carrier);
+
+        // ── Solenoidal noise: the HHD completion. ────────────────────────
+        //
+        // If noise is enabled, perturb the carrier with a von Mises-Fisher
+        // sample before it enters Cell A's history. The noisy carrier is
+        // what Cell A "perceives" — both the history and the running product
+        // see the same perturbed input.
+        //
+        // κ is modulated by the neuromodulation tones: high coherence →
+        // high κ (less noise, exploit); low coherence → low κ (more noise,
+        // explore). The BKT phase boundary in the genome filters the result:
+        // noisy partials that don't couple with anything real get pruned.
+        let (cell_a_carrier, step_kappa) = if let Some(rng) = &mut self.noise_rng {
+            let base_kappa = self.neuromod.kappa(self.noise_base_kappa);
+            // Log-normal multiplicative noise on κ itself. The exploration
+            // intensity fluctuates stochastically — sometimes the brain is
+            // very noisy, sometimes quiet, even within a single pass. This
+            // is the thermal fluctuation of the noise floor: the temperature
+            // of the temperature.
+            let kappa = base_kappa * (rng.normal() * 0.5).exp();
+            let noisy = sample_vmf_s3(carrier, kappa, rng);
+            (noisy, Some(kappa))
+        } else {
+            (*carrier, None)
+        };
+
+        self.cell_a_history.push(cell_a_carrier);
+        self.cell_a = compose(&self.cell_a, &cell_a_carrier);
         self.cell_a_count += 1;
 
         let a_sigma = sigma(&self.cell_a);
@@ -1355,6 +1426,7 @@ impl ThreeCell {
             semantic,
             arousal_tone: self.neuromod.arousal_tone,
             coherence_tone: self.neuromod.coherence_tone,
+            noise_kappa: step_kappa,
         }
     }
 
@@ -1950,6 +2022,22 @@ impl ThreeCell {
         self.hierarchy.genome_size()
     }
 
+    /// Access to the level-0 genome entries for inspection.
+    pub fn genome_entries(&self) -> &[crate::genome::GenomeEntry] {
+        &self.hierarchy.genomes[0].entries
+    }
+
+    /// The last carrier pushed into Cell A's history, if any.
+    /// When noise is enabled, this is the noisy version.
+    pub fn cell_a_last_carrier(&self) -> Option<[f64; 4]> {
+        self.cell_a_history.last().copied()
+    }
+
+    /// Current Cell A state (alias for cell_a()).
+    pub fn cell_a_state(&self) -> [f64; 4] {
+        self.cell_a
+    }
+
     pub fn hierarchy_depth(&self) -> usize {
         self.hierarchy.depth()
     }
@@ -2027,6 +2115,8 @@ impl ThreeCell {
             pending_prediction: state.pending_prediction,
             prev_sfe: None,
             last_salience_x: 0.0,  // transient — reset on next ingest
+            noise_rng: None,      // noise must be re-enabled after restore
+            noise_base_kappa: 0.0,
         }
     }
 

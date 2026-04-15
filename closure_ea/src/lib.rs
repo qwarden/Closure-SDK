@@ -106,7 +106,7 @@ pub use hopf::{
 };
 pub use localization::{localize, localized_excursion_peak, LocalizedInterval};
 pub use neuromodulation::NeuromodState;
-pub use sphere::{compose, inverse, sigma, slerp, IDENTITY};
+pub use sphere::{compose, inverse, sample_vmf_s3, sigma, slerp, Rng, IDENTITY};
 pub use teach::{
     evaluate_accuracy, run_curriculum_passes, teach, teach_batch, teach_silent, CurriculumReport,
     CurriculumTrace, CurriculumWindow, WindowReport,

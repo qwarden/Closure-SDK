@@ -98,6 +98,32 @@ impl NeuromodState {
         self.coherence_tone = self.alpha * self.coherence_tone + (1.0 - self.alpha) * coherence_input;
     }
 
+    /// Von Mises-Fisher concentration parameter κ, derived from the tones.
+    ///
+    /// The solenoidal noise floor for Cell A. High coherence (brain converging)
+    /// → high κ (less noise, exploit). Low/negative coherence (brain
+    /// destabilizing) → low κ (more noise, explore). Arousal scales the
+    /// overall noise magnitude — a quiet brain explores less.
+    ///
+    /// `base_kappa` is the resting concentration (typically 1/BKT_THRESHOLD ≈ 2.08).
+    /// The returned κ ranges from `base_kappa * 0.25` (maximum exploration)
+    /// to `base_kappa * 4.0` (maximum exploitation).
+    pub fn kappa(&self, base_kappa: f64) -> f64 {
+        // coherence_tone ∈ [−1, 1]. Map to a multiplier:
+        //   coherence = −1 → mult = 0.25 (4× more noise)
+        //   coherence =  0 → mult = 1.0  (base noise)
+        //   coherence = +1 → mult = 4.0  (4× less noise)
+        let coherence_mult = (4.0_f64).powf(self.coherence_tone);
+
+        // arousal_tone ∈ [0, 1]. Low arousal → raise κ (less noise when quiet).
+        // High arousal → lower κ (more noise when active).
+        //   arousal = 0 → mult = 2^1 = 2.0  (quieter)
+        //   arousal = 0.5 → mult = 2^0 = 1.0 (neutral)
+        //   arousal = 1 → mult = 2^-1 = 0.5  (noisier)
+        let arousal_mult = (2.0_f64).powf(1.0 - 2.0 * self.arousal_tone);
+
+        base_kappa * coherence_mult * arousal_mult
+    }
 }
 
 #[cfg(test)]

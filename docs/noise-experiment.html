@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Solenoidal Noise — Brain Stepper</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'SF Mono', 'Menlo', 'Consolas', monospace;
+  background: #0a0a0a; color: #ccc;
+}
+
+/* ── Layout ─────────────────────────────────────────── */
+.top-bar {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 16px; background: #0d0d0d; border-bottom: 1px solid #1a1a1a;
+}
+.top-bar h1 { color: #e8c84a; font-size: 1.1em; white-space: nowrap; }
+.top-bar .tabs { display: flex; gap: 4px; }
+.tab {
+  padding: 4px 12px; cursor: pointer; border: 1px solid #333;
+  background: #151515; color: #888; font-family: inherit; font-size: 0.78em;
+}
+.tab.active { background: #222; color: #e8c84a; border-color: #e8c84a; }
+
+.main { display: grid; grid-template-columns: 1fr 1fr; height: calc(100vh - 48px); }
+
+/* Left: 3D sphere + controls */
+.left-panel { display: flex; flex-direction: column; border-right: 1px solid #1a1a1a; }
+.sphere-wrap { flex: 1; position: relative; min-height: 0; }
+.sphere-wrap canvas { width: 100%; height: 100%; display: block; cursor: grab; }
+.sphere-wrap canvas:active { cursor: grabbing; }
+
+.controls {
+  padding: 10px 16px; background: #0d0d0d; border-top: 1px solid #1a1a1a;
+}
+.transport { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.transport button {
+  background: #1a1a1a; border: 1px solid #333; color: #ccc;
+  font-family: inherit; font-size: 0.85em; padding: 4px 12px; cursor: pointer;
+}
+.transport button:hover { background: #252525; }
+.transport button.active { background: #332800; border-color: #e8c84a; color: #e8c84a; }
+.transport .step-label { color: #888; font-size: 0.78em; min-width: 120px; }
+.slider-row { display: flex; align-items: center; gap: 8px; }
+.slider-row input[type=range] { flex: 1; }
+.slider-row .pass-label { color: #666; font-size: 0.72em; min-width: 80px; text-align: right; }
+
+.mode-toggle { display: flex; gap: 4px; margin-left: auto; }
+
+/* Right: state inspector */
+.right-panel { display: flex; flex-direction: column; overflow-y: auto; }
+
+.state-section {
+  padding: 12px 16px; border-bottom: 1px solid #1a1a1a;
+}
+.state-section h3 {
+  color: #666; font-size: 0.72em; text-transform: uppercase;
+  letter-spacing: 1px; margin-bottom: 6px;
+}
+
+.state-row { display: flex; justify-content: space-between; font-size: 0.8em; margin: 2px 0; }
+.state-row .label { color: #888; }
+.state-row .value { color: #ccc; font-variant-numeric: tabular-nums; }
+.state-row .value.highlight { color: #e8c84a; }
+.state-row .value.closure { color: #f44; font-weight: bold; }
+.state-row .value.good { color: #4a9; }
+.state-row .value.bad { color: #c44; }
+
+.quat-display {
+  display: inline-flex; gap: 4px; font-size: 0.75em;
+}
+.quat-display .comp { padding: 1px 4px; background: #181818; }
+.quat-display .w { color: #ccc; }
+.quat-display .x { color: #e66; }
+.quat-display .y { color: #6e6; }
+.quat-display .z { color: #66e; }
+
+/* Genome list */
+.genome-list { max-height: 200px; overflow-y: auto; }
+.genome-entry {
+  display: flex; align-items: center; gap: 6px;
+  padding: 2px 0; font-size: 0.72em;
+}
+.genome-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  flex-shrink: 0;
+}
+.genome-entry .info { color: #888; }
+.genome-entry .info .layer-dna { color: #e8c84a; }
+
+/* Mini timeline chart */
+.mini-chart { height: 60px; background: #0d0d0d; border-top: 1px solid #1a1a1a; }
+.mini-chart canvas { width: 100%; height: 100%; display: block; }
+
+/* Legend at bottom of sphere */
+.sphere-legend {
+  position: absolute; bottom: 8px; left: 8px;
+  font-size: 0.65em; color: #666; line-height: 1.6;
+}
+.sphere-legend span { margin-right: 10px; }
+.dot-identity { color: #fff; }
+.dot-input { color: #e8c84a; }
+.dot-cella { color: #f44; }
+.dot-cellc { color: #4af; }
+.dot-genome { color: #4a9; }
+.dot-field { color: #a6f; }
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <h1>Brain Stepper</h1>
+  <div class="tabs" id="exp-tabs"></div>
+</div>
+
+<div class="main">
+  <div class="left-panel">
+    <div class="sphere-wrap">
+      <canvas id="sphere"></canvas>
+      <div class="sphere-legend">
+        <span class="dot-identity">&#9679; identity</span>
+        <span class="dot-input">&#9679; input path</span>
+        <span class="dot-cella">&#9679; Cell A path</span>
+        <span class="dot-genome">&#9679; genome</span>
+        <span style="color:#ff6">&#9675; closure</span>
+      </div>
+    </div>
+    <div class="mini-chart"><canvas id="timeline"></canvas></div>
+    <div class="controls">
+      <div class="transport">
+        <button id="btn-prev" title="Previous step">&larr;</button>
+        <button id="btn-play" title="Play/pause">&#9654;</button>
+        <button id="btn-next" title="Next step">&rarr;</button>
+        <span class="step-label" id="step-label">step 0 / 0</span>
+        <div class="mode-toggle">
+          <button class="tab active" data-mode="quiet" id="mode-quiet">Quiet</button>
+          <button class="tab" data-mode="noisy" id="mode-noisy">Noisy</button>
+        </div>
+      </div>
+      <div class="slider-row">
+        <input type="range" id="step-slider" min="0" max="0" value="0">
+        <span class="pass-label" id="pass-label">pass 0</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="right-panel" id="inspector">
+    <div class="state-section">
+      <h3>This Step</h3>
+      <div id="step-info"></div>
+    </div>
+    <div class="state-section">
+      <h3>Cell A (fast oscillator / solenoidal)</h3>
+      <div id="cell-a-info"></div>
+    </div>
+    <div class="state-section">
+      <h3>Cell C (slow accumulator / gradient)</h3>
+      <div id="cell-c-info"></div>
+    </div>
+    <div class="state-section">
+      <h3>Neuromodulation</h3>
+      <div id="neuromod-info"></div>
+    </div>
+    <div class="state-section">
+      <h3>Genome</h3>
+      <div id="genome-info"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════
+// S3 / Hopf math
+// ═══════════════════════════════════════════════════════════════════════
+
+function hopfBase(q) {
+  // S3 -> S2 via Hopf: [2(xz+wy), 2(yz-wx), x^2+y^2-w^2-z^2]... no.
+  // The project uses: axis of rotation = normalize(x,y,z).
+  const [w, x, y, z] = q;
+  const r = Math.sqrt(x*x + y*y + z*z);
+  if (r < 1e-12) return [0, 0, 1]; // identity -> north pole
+  return [x/r, y/r, z/r];
+}
+
+function sigma(q) { return Math.acos(Math.min(1, Math.abs(q[0]))); }
+
+// ═══════════════════════════════════════════════════════════════════════
+// 3D Sphere Renderer
+// ═══════════════════════════════════════════════════════════════════════
+
+const sphereCanvas = document.getElementById('sphere');
+const sCtx = sphereCanvas.getContext('2d');
+
+let rotX = -0.3, rotY = 0.5; // viewing angles
+let dragging = false, lastMx, lastMy;
+
+sphereCanvas.addEventListener('mousedown', e => {
+  dragging = true; lastMx = e.clientX; lastMy = e.clientY;
+  e.preventDefault();
+});
+window.addEventListener('mousemove', e => {
+  if (!dragging) return;
+  rotY += (e.clientX - lastMx) * 0.008;
+  rotX += (e.clientY - lastMy) * 0.008;
+  rotX = Math.max(-Math.PI/2, Math.min(Math.PI/2, rotX));
+  lastMx = e.clientX; lastMy = e.clientY;
+  render();
+});
+window.addEventListener('mouseup', () => { dragging = false; });
+
+function project3D(p) {
+  // Rotate by rotY (around Y) then rotX (around X).
+  let [x, y, z] = p;
+  // Y rotation
+  let x2 = x * Math.cos(rotY) + z * Math.sin(rotY);
+  let z2 = -x * Math.sin(rotY) + z * Math.cos(rotY);
+  // X rotation
+  let y2 = y * Math.cos(rotX) - z2 * Math.sin(rotX);
+  let z3 = y * Math.sin(rotX) + z2 * Math.cos(rotX);
+  return { x: x2, y: y2, z: z3 };
+}
+
+function toScreen(p3d, cx, cy, R) {
+  return { sx: cx + p3d.x * R, sy: cy - p3d.y * R, depth: p3d.z };
+}
+
+function drawSphereFrame(ctx, cx, cy, R) {
+  // Filled sphere body — subtle gradient to give 3D shading
+  const grad = ctx.createRadialGradient(cx - R*0.2, cy - R*0.2, R*0.1, cx, cy, R);
+  grad.addColorStop(0, '#1e1e22');
+  grad.addColorStop(0.7, '#151518');
+  grad.addColorStop(1, '#101013');
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.arc(cx, cy, R, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Sphere outline
+  ctx.strokeStyle = '#3a3a40';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.arc(cx, cy, R, 0, Math.PI * 2);
+  ctx.stroke();
+
+  // Latitude/longitude grid (subtle)
+  ctx.strokeStyle = '#252530';
+  ctx.lineWidth = 0.7;
+
+  // Great circles
+  for (let ring = 0; ring < 3; ring++) {
+    ctx.beginPath();
+    for (let i = 0; i <= 64; i++) {
+      const t = (i / 64) * Math.PI * 2;
+      let p;
+      if (ring === 0) p = [Math.cos(t), Math.sin(t), 0]; // XY
+      else if (ring === 1) p = [Math.cos(t), 0, Math.sin(t)]; // XZ
+      else p = [0, Math.cos(t), Math.sin(t)]; // YZ
+      const p3 = project3D(p);
+      const s = toScreen(p3, cx, cy, R);
+      if (i === 0) ctx.moveTo(s.sx, s.sy);
+      else ctx.lineTo(s.sx, s.sy);
+    }
+    ctx.stroke();
+  }
+
+  // Extra latitude lines for more sphere feel
+  for (const lat of [-0.5, 0.5]) {
+    const cosLat = Math.sqrt(1 - lat * lat);
+    ctx.beginPath();
+    for (let i = 0; i <= 64; i++) {
+      const t = (i / 64) * Math.PI * 2;
+      const p = [cosLat * Math.cos(t), lat, cosLat * Math.sin(t)];
+      const p3 = project3D(p);
+      const s = toScreen(p3, cx, cy, R);
+      if (i === 0) ctx.moveTo(s.sx, s.sy); else ctx.lineTo(s.sx, s.sy);
+    }
+    ctx.stroke();
+  }
+
+  // Axes
+  const axes = [
+    { dir: [1,0,0], neg: [-1,0,0], color: '#f88', label: 'X' },
+    { dir: [0,1,0], neg: [0,-1,0], color: '#8f8', label: 'Y' },
+    { dir: [0,0,1], neg: [0,0,-1], color: '#88f', label: 'Z' },
+  ];
+  for (const ax of axes) {
+    // Axis line across sphere
+    const pA = project3D(ax.dir);
+    const pB = project3D(ax.neg);
+    const sA = toScreen(pA, cx, cy, R);
+    const sB = toScreen(pB, cx, cy, R);
+    ctx.strokeStyle = ax.color;
+    ctx.globalAlpha = 0.2;
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(sA.sx * 1, sA.sy); ctx.lineTo(sB.sx, sB.sy); ctx.stroke();
+    ctx.globalAlpha = 1;
+
+    // Label at tip
+    const tip = project3D(ax.dir.map(v => v * 1.12));
+    const s = toScreen(tip, cx, cy, R);
+    ctx.fillStyle = ax.color;
+    ctx.font = 'bold 12px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(ax.label, s.sx, s.sy + 4);
+  }
+}
+
+function drawPoint(ctx, cx, cy, R, p3d, radius, color, alpha, label) {
+  const p = project3D(p3d);
+  const s = toScreen(p, cx, cy, R);
+  const depthFade = 0.3 + 0.7 * (p.z + 1) / 2;
+  ctx.globalAlpha = alpha * depthFade;
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.arc(s.sx, s.sy, radius * (0.6 + 0.4 * depthFade), 0, Math.PI * 2);
+  ctx.fill();
+  if (label) {
+    ctx.font = '9px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(label, s.sx, s.sy - radius - 3);
+  }
+  ctx.globalAlpha = 1;
+  return { sx: s.sx, sy: s.sy, depth: p.z };
+}
+
+function drawPath(ctx, cx, cy, R, points, color, maxLen, dotSize) {
+  const start = Math.max(0, points.length - maxLen);
+  const n = points.length - start;
+  if (n < 1) return;
+
+  // Connected line first (faded)
+  ctx.lineWidth = 1.2;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  for (let i = start + 1; i < points.length; i++) {
+    const age = (i - start) / n;
+    const p1 = project3D(points[i - 1]);
+    const p2 = project3D(points[i]);
+    const s1 = toScreen(p1, cx, cy, R);
+    const s2 = toScreen(p2, cx, cy, R);
+    const avgDepth = (p1.z + p2.z) / 2;
+    const depthFade = 0.3 + 0.7 * (avgDepth + 1) / 2;
+    ctx.globalAlpha = age * 0.45 * depthFade;
+    ctx.strokeStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(s1.sx, s1.sy);
+    ctx.lineTo(s2.sx, s2.sy);
+    ctx.stroke();
+  }
+
+  // Dots on top
+  for (let i = start; i < points.length; i++) {
+    const age = (i - start) / n;
+    const p = project3D(points[i]);
+    const s = toScreen(p, cx, cy, R);
+    const depthFade = 0.3 + 0.7 * (p.z + 1) / 2;
+    ctx.globalAlpha = age * 0.6 * depthFade;
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(s.sx, s.sy, (dotSize || 1.5) * (0.6 + 0.4 * depthFade), 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// Data + State
+// ═══════════════════════════════════════════════════════════════════════
+
+let DATA = null;
+let currentExp = 0;
+let currentMode = 'quiet'; // 'quiet' or 'noisy'
+let currentStep = 0;
+let playing = false;
+let playTimer = null;
+
+function getSteps() {
+  if (!DATA) return [];
+  const exp = DATA[currentExp];
+  return currentMode === 'quiet' ? exp.quiet.steps : exp.noisy.steps;
+}
+function getGenome() {
+  if (!DATA) return [];
+  const exp = DATA[currentExp];
+  return currentMode === 'quiet' ? exp.quiet.final_genome : exp.noisy.final_genome;
+}
+function getExp() { return DATA ? DATA[currentExp] : null; }
+
+// ═══════════════════════════════════════════════════════════════════════
+// Rendering
+// ═══════════════════════════════════════════════════════════════════════
+
+function render() {
+  const steps = getSteps();
+  if (!steps.length) return;
+
+  const dpr = window.devicePixelRatio || 1;
+  const rect = sphereCanvas.getBoundingClientRect();
+  sphereCanvas.width = rect.width * dpr;
+  sphereCanvas.height = rect.height * dpr;
+  sCtx.scale(dpr, dpr);
+
+  const W = rect.width, H = rect.height;
+  const cx = W / 2, cy = H / 2;
+  const R = Math.min(W, H) * 0.36;
+
+  sCtx.fillStyle = '#0a0a0a';
+  sCtx.fillRect(0, 0, W, H);
+
+  drawSphereFrame(sCtx, cx, cy, R);
+
+  const step = steps[currentStep];
+  if (!step) return;
+
+  const TRAIL = 60; // how many past steps to show
+
+  // ── Collect trail data ──────────────────────────────────────────────
+  const trailStart = Math.max(0, currentStep - TRAIL);
+  const cellATrail = [];   // Cell A running product positions
+  const inputTrail = [];   // raw input positions
+  const closureSteps = []; // indices within trail that had closures
+  for (let i = trailStart; i <= currentStep; i++) {
+    cellATrail.push(steps[i].cell_a_hopf_base);
+    inputTrail.push(hopfBase(steps[i].input));
+    if (steps[i].closure_fired) closureSteps.push(i - trailStart);
+  }
+
+  // ── Genome entries (faded background) ───────────────────────────────
+  const genome = getGenome();
+  for (const e of genome) {
+    drawPoint(sCtx, cx, cy, R, e.hopf_base, 3, '#4a9', 0.2);
+  }
+
+  // ── Input path (gold) ──────────────────────────────────────────────
+  drawPath(sCtx, cx, cy, R, inputTrail, '#e8c84a', TRAIL, 1.5);
+
+  // ── Cell A path (red) ──────────────────────────────────────────────
+  drawPath(sCtx, cx, cy, R, cellATrail, '#f44', TRAIL, 2);
+
+  // ── Closure markers (rings on the Cell A trail) ────────────────────
+  for (const ci of closureSteps) {
+    const p = project3D(cellATrail[ci]);
+    const s = toScreen(p, cx, cy, R);
+    const depthFade = 0.3 + 0.7 * (p.z + 1) / 2;
+    sCtx.globalAlpha = 0.9 * depthFade;
+    sCtx.strokeStyle = '#f44';
+    sCtx.lineWidth = 2;
+    sCtx.beginPath();
+    sCtx.arc(s.sx, s.sy, 8, 0, Math.PI * 2);
+    sCtx.stroke();
+    sCtx.globalAlpha = 1;
+  }
+
+  // ── Identity ───────────────────────────────────────────────────────
+  drawPoint(sCtx, cx, cy, R, [0, 0, 1], 5, '#fff', 0.5, 'I');
+
+  // ── Current input (big gold dot) ───────────────────────────────────
+  const inputBase = hopfBase(step.input);
+  drawPoint(sCtx, cx, cy, R, inputBase, 6, '#e8c84a', 1.0, 'input');
+
+  // ── Current Cell A (big red dot) ───────────────────────────────────
+  drawPoint(sCtx, cx, cy, R, step.cell_a_hopf_base, 7, '#f44', 1.0, 'Cell A');
+
+  // ── Current closure (flash) ────────────────────────────────────────
+  if (step.closure_fired) {
+    const p = project3D(step.cell_a_hopf_base);
+    const s = toScreen(p, cx, cy, R);
+    sCtx.strokeStyle = '#ff6';
+    sCtx.lineWidth = 2.5;
+    sCtx.beginPath();
+    sCtx.arc(s.sx, s.sy, 16, 0, Math.PI * 2);
+    sCtx.stroke();
+    sCtx.fillStyle = '#ff6';
+    sCtx.font = 'bold 10px monospace';
+    sCtx.textAlign = 'center';
+    sCtx.fillText('CLOSURE', s.sx, s.sy - 20);
+  }
+
+  // Update inspector
+  updateInspector(step, steps);
+  // Update timeline
+  drawTimeline();
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// Inspector (right panel)
+// ═══════════════════════════════════════════════════════════════════════
+
+function quatHtml(q) {
+  return `<span class="quat-display">` +
+    `<span class="comp w">${q[0].toFixed(4)}</span>` +
+    `<span class="comp x">${q[1].toFixed(4)}</span>` +
+    `<span class="comp y">${q[2].toFixed(4)}</span>` +
+    `<span class="comp z">${q[3].toFixed(4)}</span>` +
+    `</span>`;
+}
+
+function row(label, value, cls) {
+  return `<div class="state-row"><span class="label">${label}</span><span class="value ${cls||''}">${value}</span></div>`;
+}
+
+function sigmaBar(val, max) {
+  const pct = Math.min(100, (val / max) * 100);
+  return `<span style="display:inline-block;width:60px;height:6px;background:#1a1a1a;vertical-align:middle;margin-left:6px;">` +
+    `<span style="display:block;width:${pct}%;height:100%;background:${pct > 50 ? '#c44' : '#4a9'}"></span></span>`;
+}
+
+function updateInspector(step, steps) {
+  const exp = getExp();
+  const halfPi = Math.PI / 2;
+
+  // Step info
+  document.getElementById('step-info').innerHTML =
+    row('input', quatHtml(step.input)) +
+    (step.noise_kappa != null ?
+      row('cell A received', quatHtml(step.cell_a_carrier)) +
+      row('noise deviation', sigma(composeQ(step.input, inverseQ(step.cell_a_carrier))).toFixed(4) + ' rad') : '') +
+    row('prediction error', step.prediction_error.toFixed(4) + sigmaBar(step.prediction_error, halfPi),
+        step.prediction_error > 0.5 ? 'bad' : 'good') +
+    row('self-free-energy', step.self_free_energy.toFixed(4) + sigmaBar(step.self_free_energy, halfPi),
+        step.self_free_energy > 0.8 ? 'bad' : step.self_free_energy < 0.3 ? 'good' : '') +
+    row('valence', step.valence.toFixed(4), step.valence > 0 ? 'good' : step.valence < -0.01 ? 'bad' : '') +
+    row('closure', step.closure_fired ? `YES (sigma=${step.closure_sigma.toFixed(4)}, support=${step.closure_support})` : 'no',
+        step.closure_fired ? 'closure' : '');
+
+  // Cell A
+  document.getElementById('cell-a-info').innerHTML =
+    row('running product', quatHtml([Math.cos(step.cell_a_sigma), ...step.cell_a_hopf_base.map(v => v * Math.sin(step.cell_a_sigma))])) +
+    row('sigma (from I)', step.cell_a_sigma.toFixed(4) + sigmaBar(step.cell_a_sigma, halfPi)) +
+    row('Hopf base', `[${step.cell_a_hopf_base.map(v => v.toFixed(3)).join(', ')}]`) +
+    row('Hopf phase', step.cell_a_hopf_phase.toFixed(4) + ' rad');
+
+  // Cell C
+  document.getElementById('cell-c-info').innerHTML =
+    row('sigma (from I)', step.cell_c_sigma.toFixed(4) + sigmaBar(step.cell_c_sigma, halfPi));
+
+  // Neuromod
+  const neuroHtml =
+    row('arousal tone', step.arousal_tone.toFixed(4) + sigmaBar(step.arousal_tone, 1)) +
+    row('coherence tone', step.coherence_tone.toFixed(4),
+        step.coherence_tone > 0 ? 'good' : step.coherence_tone < 0 ? 'bad' : '') +
+    (step.noise_kappa != null ?
+      row('effective kappa', step.noise_kappa.toFixed(2), step.noise_kappa < 1.5 ? 'highlight' : '') :
+      row('noise', 'disabled'));
+  document.getElementById('neuromod-info').innerHTML = neuroHtml;
+
+  // Genome
+  document.getElementById('genome-info').innerHTML =
+    row('size', step.genome_size + ' entries') +
+    '<div class="genome-list" id="genome-list"></div>';
+
+  // Populate genome list from final genome (with size indication)
+  const genome = getGenome();
+  const gl = document.getElementById('genome-list');
+  const shown = genome.slice(0, 30);
+  gl.innerHTML = shown.map(e => {
+    const [bx, by, bz] = e.hopf_base;
+    const r = Math.round(128 + 127*bx), g = Math.round(128 + 127*by), b = Math.round(128 + 127*bz);
+    return `<div class="genome-entry">` +
+      `<div class="genome-dot" style="background:rgb(${r},${g},${b})${e.layer==='Dna'?';border:1px solid #e8c84a':''}"></div>` +
+      `<span class="info">${e.layer==='Dna'?'<span class="layer-dna">DNA</span>':'epi'} ` +
+      `sigma=${e.sigma.toFixed(3)} act=${e.activation_count}</span></div>`;
+  }).join('') + (genome.length > 30 ? `<div style="color:#555;font-size:0.7em">...and ${genome.length-30} more</div>` : '');
+}
+
+// Quaternion helpers for JS
+function composeQ(a, b) {
+  return [
+    a[0]*b[0]-a[1]*b[1]-a[2]*b[2]-a[3]*b[3],
+    a[0]*b[1]+a[1]*b[0]+a[2]*b[3]-a[3]*b[2],
+    a[0]*b[2]-a[1]*b[3]+a[2]*b[0]+a[3]*b[1],
+    a[0]*b[3]+a[1]*b[2]-a[2]*b[1]+a[3]*b[0],
+  ];
+}
+function inverseQ(q) { return [q[0], -q[1], -q[2], -q[3]]; }
+
+// ═══════════════════════════════════════════════════════════════════════
+// Mini timeline
+// ═══════════════════════════════════════════════════════════════════════
+
+function drawTimeline() {
+  const canvas = document.getElementById('timeline');
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+  ctx.scale(dpr, dpr);
+  const W = rect.width, H = rect.height;
+  const pad = { l: 4, r: 4, t: 4, b: 4 };
+  const pw = W - pad.l - pad.r, ph = H - pad.t - pad.b;
+
+  ctx.fillStyle = '#0d0d0d';
+  ctx.fillRect(0, 0, W, H);
+
+  const steps = getSteps();
+  if (!steps.length) return;
+
+  // Draw prediction error
+  let maxPe = 0;
+  for (const s of steps) if (s.prediction_error > maxPe) maxPe = s.prediction_error;
+  maxPe = Math.max(maxPe, 0.1);
+
+  ctx.strokeStyle = currentMode === 'quiet' ? '#4a9' : '#e8c84a';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  for (let i = 0; i < steps.length; i++) {
+    const x = pad.l + pw * i / steps.length;
+    const y = pad.t + ph * (1 - steps[i].prediction_error / maxPe);
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+
+  // Closures as ticks
+  ctx.fillStyle = '#f44';
+  for (let i = 0; i < steps.length; i++) {
+    if (steps[i].closure_fired) {
+      const x = pad.l + pw * i / steps.length;
+      ctx.fillRect(x, pad.t, 1, ph);
+    }
+  }
+
+  // Playhead
+  const px = pad.l + pw * currentStep / steps.length;
+  ctx.strokeStyle = '#fff';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(px, pad.t);
+  ctx.lineTo(px, pad.t + ph);
+  ctx.stroke();
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// Controls
+// ═══════════════════════════════════════════════════════════════════════
+
+function setStep(s) {
+  const steps = getSteps();
+  currentStep = Math.max(0, Math.min(steps.length - 1, s));
+  document.getElementById('step-slider').value = currentStep;
+  const exp = getExp();
+  const passLen = exp ? exp.corpus_len : 1;
+  const pass = Math.floor(currentStep / passLen);
+  const inPass = currentStep % passLen;
+  document.getElementById('step-label').textContent = `step ${currentStep} / ${steps.length - 1}`;
+  document.getElementById('pass-label').textContent = `pass ${pass}, token ${inPass}`;
+  render();
+}
+
+document.getElementById('btn-prev').onclick = () => { stopPlay(); setStep(currentStep - 1); };
+document.getElementById('btn-next').onclick = () => { stopPlay(); setStep(currentStep + 1); };
+document.getElementById('btn-play').onclick = () => {
+  if (playing) { stopPlay(); return; }
+  playing = true;
+  document.getElementById('btn-play').classList.add('active');
+  document.getElementById('btn-play').textContent = '||';
+  playTimer = setInterval(() => {
+    const steps = getSteps();
+    if (currentStep >= steps.length - 1) { stopPlay(); return; }
+    setStep(currentStep + 1);
+  }, 50);
+};
+function stopPlay() {
+  playing = false;
+  clearInterval(playTimer);
+  document.getElementById('btn-play').classList.remove('active');
+  document.getElementById('btn-play').textContent = '\u25B6';
+}
+
+document.getElementById('step-slider').oninput = function() { stopPlay(); setStep(+this.value); };
+
+document.getElementById('mode-quiet').onclick = () => switchMode('quiet');
+document.getElementById('mode-noisy').onclick = () => switchMode('noisy');
+
+function switchMode(m) {
+  currentMode = m;
+  document.getElementById('mode-quiet').classList.toggle('active', m === 'quiet');
+  document.getElementById('mode-noisy').classList.toggle('active', m === 'noisy');
+  setupSlider();
+  setStep(Math.min(currentStep, getSteps().length - 1));
+}
+
+// Keyboard
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowLeft') { stopPlay(); setStep(currentStep - 1); e.preventDefault(); }
+  if (e.key === 'ArrowRight') { stopPlay(); setStep(currentStep + 1); e.preventDefault(); }
+  if (e.key === ' ') { document.getElementById('btn-play').click(); e.preventDefault(); }
+  if (e.key === 'q') switchMode('quiet');
+  if (e.key === 'n') switchMode('noisy');
+  // Jump by pass
+  if (e.key === 'ArrowUp') {
+    const exp = getExp();
+    if (exp) { stopPlay(); setStep(currentStep - exp.corpus_len); }
+    e.preventDefault();
+  }
+  if (e.key === 'ArrowDown') {
+    const exp = getExp();
+    if (exp) { stopPlay(); setStep(currentStep + exp.corpus_len); }
+    e.preventDefault();
+  }
+});
+
+function setupSlider() {
+  const steps = getSteps();
+  const slider = document.getElementById('step-slider');
+  slider.max = steps.length - 1;
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// Init
+// ═══════════════════════════════════════════════════════════════════════
+
+function selectExp(i) {
+  currentExp = i;
+  currentStep = 0;
+  document.querySelectorAll('#exp-tabs .tab').forEach((t, j) => t.classList.toggle('active', j === i));
+  setupSlider();
+  setStep(0);
+}
+
+fetch('noise-trace.json')
+  .then(r => r.json())
+  .then(d => {
+    DATA = d;
+    const tabs = document.getElementById('exp-tabs');
+    d.forEach((exp, i) => {
+      const btn = document.createElement('div');
+      btn.className = 'tab' + (i === 0 ? ' active' : '');
+      btn.textContent = exp.name;
+      btn.onclick = () => selectExp(i);
+      tabs.appendChild(btn);
+    });
+    setupSlider();
+    setStep(0);
+  })
+  .catch(e => { document.body.innerHTML = '<p style="color:red;padding:20px">Failed to load noise-trace.json: ' + e + '</p>'; });
+
+window.addEventListener('resize', () => render());
+</script>
+</body>
+</html>

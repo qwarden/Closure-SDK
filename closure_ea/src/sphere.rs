@@ -110,3 +110,104 @@ pub fn slerp(a: &[f64; 4], b: &[f64; 4], t: f64) -> [f64; 4] {
         wa * a[3] + wb * target[3],
     ]
 }
+
+// ── Von Mises-Fisher sampling on S³ ──────────────────────────────────────────
+//
+// The natural noise distribution on S³ = SU(2). Concentration parameter κ:
+//   κ = 0  → Haar measure (uniform on S³, maximum disorder)
+//   κ → ∞  → delta at center (deterministic, no noise)
+//   κ ≈ 1/BKT_THRESHOLD ≈ 2.08 → critical noise: perturbations reach the
+//     closure threshold σ ≈ π/4 with meaningful probability.
+//
+// Sampling uses the rejection-free method for S³: generate a 4D Gaussian
+// centered on the north pole with tangent-space variance ~1/κ, then rotate
+// the result to the desired center via Hamilton product.
+//
+// The RNG is a simple xoshiro256** seeded from the caller. No external
+// crate dependency — the substrate stays self-contained.
+
+/// Xoshiro256** PRNG — fast, high-quality, no-dependency.
+/// State is 256 bits; period is 2^256 − 1.
+#[derive(Clone, Debug)]
+pub struct Rng {
+    s: [u64; 4],
+}
+
+impl Rng {
+    /// Seed from a single u64. Splitmix64 expands to full state.
+    pub fn new(seed: u64) -> Self {
+        let mut z = seed;
+        let mut s = [0u64; 4];
+        for slot in &mut s {
+            z = z.wrapping_add(0x9e3779b97f4a7c15);
+            z = (z ^ (z >> 30)).wrapping_mul(0xbf58476d1ce4e5b9);
+            z = (z ^ (z >> 27)).wrapping_mul(0x94d049bb133111eb);
+            *slot = z ^ (z >> 31);
+        }
+        Self { s }
+    }
+
+    /// Next u64.
+    #[inline]
+    fn next_u64(&mut self) -> u64 {
+        let result = (self.s[1].wrapping_mul(5)).rotate_left(7).wrapping_mul(9);
+        let t = self.s[1] << 17;
+        self.s[2] ^= self.s[0];
+        self.s[3] ^= self.s[1];
+        self.s[1] ^= self.s[2];
+        self.s[0] ^= self.s[3];
+        self.s[2] ^= t;
+        self.s[3] = self.s[3].rotate_left(45);
+        result
+    }
+
+    /// Uniform f64 in [0, 1).
+    #[inline]
+    pub fn uniform(&mut self) -> f64 {
+        (self.next_u64() >> 11) as f64 / (1u64 << 53) as f64
+    }
+
+    /// Standard normal via Box-Muller.
+    pub fn normal(&mut self) -> f64 {
+        let u1 = self.uniform().max(1e-300);
+        let u2 = self.uniform();
+        (-2.0 * u1.ln()).sqrt() * (2.0 * std::f64::consts::PI * u2).cos()
+    }
+}
+
+/// Sample a unit quaternion from the von Mises-Fisher distribution on S³.
+///
+/// `center`: the mean direction (unit quaternion).
+/// `kappa`: concentration. 0 = uniform/Haar; large = tight around center.
+///
+/// Method: sample a tangent-space perturbation at the north pole [1,0,0,0],
+/// then rotate to `center` via Hamilton product. The tangent vector has
+/// Gaussian components with std = 1/√κ, giving geodesic spread ~1/√κ.
+pub fn sample_vmf_s3(center: &[f64; 4], kappa: f64, rng: &mut Rng) -> [f64; 4] {
+    if kappa < 1e-9 {
+        // κ ≈ 0: uniform on S³ (Haar measure).
+        let mut q = [rng.normal(), rng.normal(), rng.normal(), rng.normal()];
+        normalize(&mut q);
+        return q;
+    }
+
+    // Tangent-space perturbation at the north pole.
+    // The imaginary components are Gaussian with std = 1/√κ.
+    let std_dev = 1.0 / kappa.sqrt();
+    let dx = rng.normal() * std_dev;
+    let dy = rng.normal() * std_dev;
+    let dz = rng.normal() * std_dev;
+
+    // Lift to S³: w = √(1 − |v|²), or normalize if |v| > 1.
+    let v_sq = dx * dx + dy * dy + dz * dz;
+    let perturbation = if v_sq < 1.0 {
+        [(1.0 - v_sq).sqrt(), dx, dy, dz]
+    } else {
+        let mut q = [0.0, dx, dy, dz];
+        normalize(&mut q);
+        q
+    };
+
+    // Rotate from north pole to center.
+    compose(center, &perturbation)
+}
